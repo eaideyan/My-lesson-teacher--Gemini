@@ -261,6 +261,7 @@
       row.appendChild(role === 'assistant' ? bubble : avatar);
       chatBox.appendChild(row);
       chatBox.scrollTop = chatBox.scrollHeight;
+       return row; // ✅ Return the DOM node
     }
 
     function speak(text) {
