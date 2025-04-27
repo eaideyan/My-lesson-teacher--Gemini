@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Uncle E. – Your AI Tutor 🇳🇬</title>
+  <title>Dr. Maria – Your AI Tutor 🇳🇬</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* ---------- BASE ---------- */
@@ -36,7 +36,18 @@
     }
 
     /* ---------- SIDEBARS ---------- */
-    aside, #visuals {
+    #leftSidebar {
+      position: sticky;
+      top: 5rem;
+      width: 20%; min-width: 180px;
+      background: #fff; border-radius: 16px; padding: .5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      font-size: .95rem;
+      display: flex; flex-direction: column;
+      min-height: 0; overflow-y: auto; gap: .5rem;
+      max-height: calc(100vh - 6rem);
+    }
+    #visuals {
       width: 20%; min-width: 180px;
       background: #fff; border-radius: 16px; padding: .5rem;
       box-shadow: 0 2px 6px rgba(0,0,0,.08);
@@ -44,14 +55,19 @@
       display: flex; flex-direction: column;
       min-height: 0; overflow-y: auto; gap: .5rem;
     }
-    /* Sticky left sidebar */
-    #leftSidebar {
-      position: sticky;
-      top: 5rem; /* below the header */
-      max-height: calc(100vh - 6rem);
-      overflow-y: auto;
-    }
     #visuals h3 { margin-bottom: .3rem }
+
+    /* Progress Animation */
+    #progressVisual {
+      transition: transform 0.3s ease;
+    }
+    .pulse {
+      animation: pulse 0.5s ease-out;
+    }
+    @keyframes pulse {
+      0%,100% { transform: none; }
+      50% { transform: scale(1.08); }
+    }
 
     /* ---------- CHAT ---------- */
     #chatBoxWrapper {
@@ -107,7 +123,10 @@
       min-height: 3rem; max-height: 8rem;
       overflow: auto; resize: none;
     }
-    #controls { display: flex; flex-direction: column; gap: .3rem }
+    textarea.auto { height: auto }
+    #controls {
+      display: flex; flex-direction: column; align-items: center; gap: .3rem;
+    }
     .top-buttons { display: flex; gap: .4rem }
     button {
       background: #2563eb; color: #fff; border: none;
@@ -119,20 +138,12 @@
       font-size: .85rem; padding: .3rem .8rem;
     }
 
-    /* ---------- PROGRESS ANIMATION ---------- */
-    #progressVisual {
-      transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-    .pulse {
-      transform: scale(1.05);
-      opacity: 0.9;
-    }
-
     /* ---------- MOBILE ---------- */
     @media (max-width: 768px) {
       aside, #visuals { display: none }
       main#wrapper {
-        flex-direction: column; padding: 4.7rem 1rem calc(7.3rem + env(safe-area-inset-bottom));
+        flex-direction: column; align-items: stretch;
+        padding: 4.7rem 1rem calc(7.3rem + env(safe-area-inset-bottom));
       }
     }
 
@@ -150,21 +161,24 @@
 </head>
 <body>
   <header>
-    Uncle E, AI<br><small>Powered by ValueFirst</small>
+    Dr. Maria AI
+    <small>Powered by Julliard Academy</small>
   </header>
   <div id="speakToggleWrapper">
-    <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E Speaks</label>
+    <label><input type="checkbox" id="speakToggle"> 🔊 Dr. Maria Speaks</label>
   </div>
 
   <main id="wrapper">
     <aside id="leftSidebar">
       <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
-      <div id="knowledgeContent">
+      <div id="knowledgeContent" style="overflow:auto">
         <div id="aboutMrE">
-          <p><strong>I am Uncle E.</strong></p>
-          <p>Your friendly AI tutor! 🌟<br>
-          I’ll help you learn step by step.<br>
-          Feel free to ask questions and relax!</p>
+          <p><strong>I am Dr. Maria</strong></p>
+          <p>
+            Your friendly AI tutor! 🌟<br>
+            I'll help you learn step by step.<br>
+            Feel free to ask questions and relax!
+          </p>
           <p><strong>Great!</strong></p>
         </div>
         <div id="treeContents" style="margin-top:.8rem"></div>
@@ -195,21 +209,7 @@
   </form>
 
   <script>
-    // ─────────────── State Restoration ───────────────
-    function restoreState() {
-      const treeHTML = localStorage.getItem('treeHTML');
-      const prog     = JSON.parse(localStorage.getItem('progress')||'{}');
-      if (treeHTML) {
-        document.getElementById('treeContents').innerHTML = treeHTML;
-        document.getElementById('knowledgeHeader').style.display = 'block';
-        document.getElementById('aboutMrE').style.display = 'none';
-      }
-      if (prog.done != null && prog.total != null) {
-        updateProgress(prog.done, prog.total);
-      }
-    }
-
-    // ─────────────── DOM References ───────────────
+    /* ---------- DOM ---------- */
     const chatBox     = document.getElementById('chat');
     const form        = document.getElementById('chat-form');
     const input       = document.getElementById('messageInput');
@@ -217,10 +217,13 @@
     const clearBtn    = document.getElementById('clearButton');
     const speakToggle = document.getElementById('speakToggle');
 
-    // ─────────────── App State ───────────────
-    let history = [], student = '', thinking = null, totalNodes = 0;
+    /* ---------- STATE ---------- */
+    let history = [];
+    let student = '';
+    let thinking = null;
+    let totalNodes = 0;
 
-    // ─────────────── Helper: add message ───────────────
+    /* ---------- HELPERS ---------- */
     function addMsg(text, role) {
       const row = document.createElement('div');
       row.className = `message-row ${role}`;
@@ -228,16 +231,16 @@
       av.className = `avatar ${role}`;
       const bub = document.createElement('div');
       bub.className = `bubble ${role}`;
-      bub.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-                         .replace(/\*(.*?)\*/g,'<em>$1</em>');
-      if (role==='user') bub.setAttribute('data-name', student);
-      row.append(role==='assistant'?av:bub, role==='assistant'?bub:av);
+      bub.innerHTML = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+      if (role === 'user') bub.setAttribute('data-name', student);
+      row.append(role === 'assistant' ? av : bub, role === 'assistant' ? bub : av);
       chatBox.appendChild(row);
       chatBox.scrollTop = chatBox.scrollHeight;
       return row;
     }
 
-    // ─────────────── Speech ───────────────
     function speak(t) {
       if (!speakToggle.checked) return;
       const u = new SpeechSynthesisUtterance(t);
@@ -245,132 +248,297 @@
       speechSynthesis.speak(u);
     }
 
-    // ─────────────── Confetti ───────────────
     function confetti() {
       const d = document.createElement('div');
       d.id = 'cssConfetti';
       d.textContent = '🎉';
       document.body.append(d);
-      setTimeout(()=>d.remove(),1300);
+      setTimeout(() => d.remove(), 1300);
     }
 
-    // ─────────────── Progress Bar ───────────────
-    function updateProgress(done=0, total=0) {
-      totalNodes = total;
-      const filled = '🟢'.repeat(done);
-      const empty  = '⬜'.repeat(Math.max(total-done,0));
-      const pv = document.getElementById('progressVisual');
-      pv.innerHTML = `🧠 Progress: ${filled}${empty} (${done}/${total} mastered!)`;
-      pv.classList.add('pulse');
-      setTimeout(()=>pv.classList.remove('pulse'),300);
-      document.getElementById('progressFeedback').textContent =
-        done===total? "🎉 Topic mastered!" :
-        done>0? `Next: ${done+1}/${total}` :
-               "Let's begin!";
-      localStorage.setItem('progress', JSON.stringify({done,total}));
-    }
-
-    // ─────────────── Mark Node ───────────────
+    /* ---------- TREE MARKING ---------- */
     function markNode(index) {
       const items = document.querySelectorAll('#treeContents li');
       if (items[index] && !items[index].textContent.includes('✅')) {
-        items[index].innerHTML = '✅ ' + items[index].textContent;
-        localStorage.setItem('treeHTML',
-          document.getElementById('treeContents').innerHTML);
+        items[index].innerHTML = '✅ ' + items[index].textContent.replace(/^✅\s*/, '');
+        saveTreeState();
       }
     }
 
-    // ─────────────── Render Tree ───────────────
+    /* ---------- STATE PERSISTENCE ---------- */
+    function saveTreeState() {
+      try {
+        const treeHTML = document.getElementById('treeContents').innerHTML;
+        const progress = {
+          done: (document.getElementById('progressVisual').textContent.match(/🟢/g) || []).length,
+          total: totalNodes
+        };
+        
+        if (treeHTML.length < 50000) {
+          localStorage.setItem('treeState', JSON.stringify({
+            treeHTML,
+            progress,
+            timestamp: Date.now()
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to save state:', e);
+      }
+    }
+
+    function restoreTreeState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('treeState'));
+        if (saved?.treeHTML) {
+          document.getElementById('treeContents').innerHTML = saved.treeHTML;
+          document.getElementById('knowledgeHeader').style.display = 'block';
+          document.getElementById('aboutMrE').style.display = 'none';
+          
+          if (saved.progress) {
+            totalNodes = saved.progress.total || 0;
+            updateProgress(saved.progress.done || 0, totalNodes);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to restore state:', e);
+      }
+    }
+
+    /* ---------- PROGRESS BAR ---------- */
+    function updateProgress(done = 0, total = 0) {
+      const filled = '🟢'.repeat(done);
+      const empty = '⬜'.repeat(Math.max(total - done, 0));
+      
+      const pv = document.getElementById('progressVisual');
+      pv.innerHTML = `🧠 Progress: ${filled}${empty} (${done}/${total} mastered!)`;
+      pv.classList.add('pulse');
+      
+      document.getElementById('progressFeedback').textContent =
+        done === total ? "🎉 Topic mastered!" :
+        done > 0 ? `Next: ${done+1}/${total}` : 
+                   "Let's begin!";
+      
+      saveTreeState();
+      setTimeout(() => pv.classList.remove('pulse'), 300);
+    }
+
+    /* ---------- KNOWLEDGE TREE ---------- */
     function setTree(txt) {
-      const lines = txt.split('\n').filter(l=>/^\d+\./.test(l));
+      const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
       if (!lines.length) return;
+
       totalNodes = lines.length;
       document.getElementById('knowledgeHeader').style.display = 'block';
       document.getElementById('aboutMrE').style.display = 'none';
       document.getElementById('treeContents').innerHTML =
         '<ol style="padding-left:1rem">' +
-          lines.map(l=>`<li>${l.replace(/^\d+\.\s*/,'')}</li>`).join('') +
+          lines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('') +
         '</ol>';
+
       updateProgress(0, totalNodes);
     }
 
-    // ─────────────── Handle AI Reply ───────────────
+    /* ---------- HANDLE ASSISTANT ---------- */
     function handleAI(reply) {
-      // Visuals reset
       const visuals = document.getElementById('visuals');
       visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
+      let cleanReply = reply;
 
-      // Clean reply & render bubble
-      let clean = reply.replace(/\n\s*\n/g,'\n').trim();
-      addMsg(clean, 'assistant');
-      speak(clean);
+      // Extract images
+      const images = [];
+      const imgPattern = /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi;
+      cleanReply = cleanReply.replace(imgPattern, (fullMatch, url) => {
+        images.push(url);
+        return '';
+      });
 
-      // Tree?
-      if (clean.includes('Knowledge Tree:')) {
-        const treeText = clean.split('Knowledge Tree:')[1];
+      // Extract YouTube IDs
+      const youtubeIDs = [];
+      let yt;
+      while ((yt = /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi.exec(reply)) !== null) {
+        youtubeIDs.push(yt[1]);
+        cleanReply = cleanReply.replace(yt[0], '');
+      }
+
+      // Clean up leftover markup
+      cleanReply = cleanReply
+        .replace(/(?:Image:|!\[.*?\]\()/gi, '')
+        .replace(/\n\s*\n/g, '\n')
+        .trim();
+
+      // Render the assistant bubble & speak
+      addMsg(cleanReply, 'assistant');
+      speak(cleanReply);
+
+      // Show the first image
+      if (images.length) {
+        const img = document.createElement('img');
+        img.src = images[0];
+        img.style.cssText = `
+          width: 100%;
+          max-height: 300px;
+          object-fit: contain;
+          margin: 1rem 0;
+          border-radius: 8px;
+          border: 1px solid #e5e7eb;
+        `;
+        img.onerror = () => img.remove();
+        visuals.appendChild(img);
+      }
+      // Or show YouTube embed
+      else if (youtubeIDs.length) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${youtubeIDs[0]}`;
+        iframe.style.cssText = `
+          width: 100%;
+          aspect-ratio: 16/9;
+          margin: 1rem 0;
+          border-radius: 8px;
+          border: none;
+        `;
+        iframe.allowFullscreen = true;
+        visuals.appendChild(iframe);
+      }
+
+      // Update knowledge tree
+      const treeIdx = reply.indexOf('Knowledge Tree:');
+      if (treeIdx !== -1) {
+        const treeText = reply.slice(treeIdx)
+          .split('\n')
+          .slice(1)
+          .join('\n');
         setTree(treeText);
       }
 
-      // Progress?
-      const m = reply.match(/🧠\s*Progress:\s*([🟢🟧⬜]+)\s*\((\d+)\/(\d+)\)/i);
-      if (m) {
-        const done  = parseInt(m[2],10);
-        const total = parseInt(m[3],10);
-        markNode(done-1);
+      // Parse progress updates
+      const progMatch = reply.match(
+        /🧠\s*Progress:\s*([🟢🟧⬜]+)\s*(?:\((\d+)\/(\d+)\))?/i
+      );
+
+      if (progMatch) {
+        let [, state, doneStr, totalStr] = progMatch;
+        const done = doneStr ? parseInt(doneStr, 10) : (state.match(/🟢/g) || []).length;
+        const total = totalStr ? parseInt(totalStr, 10) : state.length;
+
+        // Mark all completed nodes
+        for (let i = 0; i < done; i++) {
+          markNode(i);
+        }
+        
         updateProgress(done, total);
-        if (done===total) confetti();
+      }
+
+      // Mobile progress fallback
+      if (window.innerWidth < 768 && totalNodes > 0) {
+        const currentDone = (document.getElementById('progressVisual').textContent.match(/🟢/g) || []).length;
+        addMsg(`📊 Progress: ${currentDone}/${totalNodes}`, 'assistant');
+      }
+
+      // Celebrate mastery
+      if (/You\s+MASTERED/i.test(reply)) {
+        confetti();
       }
     }
 
-    // ─────────────── Send & Receive ───────────────
+    /* ---------- SEND ---------- */
     async function send(msg) {
-      if (!student) {
-        const n = msg.match(/my name is (\w+)/i);
-        if (n) student = n[1];
+      if (!student && /my name is (\w+)/i.test(msg)) {
+        student = msg.match(/my name is (\w+)/i)[1];
       }
-      history.push({role:'user',content:msg});
-      addMsg(msg,'user');
-      const think = addMsg('💭 Uncle E is thinking...', 'assistant');
-      let data;
+
+      history.push({ role: 'user', content: msg });
+      addMsg(msg, 'user');
+
+      thinking = addMsg('💭 Dr. Maria is thinking...', 'assistant');
+
       try {
-        const res = await fetch('/api/chat',{method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({conversation:history})
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation: history })
         });
-        data = await res.json();
-      } catch {
-        think.remove();
-        return addMsg('⚠️ Something went wrong','assistant');
+        
+        if (!res.ok) throw new Error(`API error ${res.status}`);
+        
+        const data = await res.json();
+        let rep = data.message?.replace(/⚠️/g, '') || '';
+        rep = rep.replace(/Do you understand\?.*?/gi, 'Do you understand?');
+
+        history.push({ role: 'assistant', content: rep });
+        if (thinking) { thinking.remove(); thinking = null; }
+        handleAI(rep);
+      } catch (error) {
+        console.error('Error:', error);
+        if (thinking) { thinking.remove(); thinking = null; }
+        addMsg('⚠️ Something went wrong', 'assistant');
       }
-      think.remove();
-      history.push({role:'assistant',content:data.message});
-      handleAI(data.message);
     }
 
-    // ─────────────── Init ───────────────
-    function initChat(){
-      restoreState();
-      history=[]; student=''; totalNodes=0;
-      chatBox.innerHTML='';
-      document.getElementById('knowledgeHeader').style.display='none';
-      document.getElementById('aboutMrE').style.display='block';
-      document.getElementById('treeContents').innerHTML='';
-      updateProgress(0,0);
-      setTimeout(()=>{
+    /* ---------- INIT ---------- */
+    function initChat() {
+      restoreTreeState();
+      history = []; student = ''; totalNodes = 0;
+      chatBox.innerHTML = '';
+      document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
+      document.getElementById('knowledgeHeader').style.display = 'none';
+      document.getElementById('aboutMrE').style.display = 'block';
+      document.getElementById('treeContents').innerHTML = '';
+      updateProgress(0, 0);
+
+      setTimeout(() => {
         addMsg(
-          "Hi 👋 What's your name, grade, and topic you'd like to learn today?",
+          "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
           'assistant'
         );
-      },300);
+      }, 300);
     }
     document.addEventListener('DOMContentLoaded', initChat);
 
-    // ─────────────── Events ───────────────
-    form.onsubmit = e=>{e.preventDefault(); if(input.value.trim()) send(input.value.trim()); input.value='';};
+    /* ---------- EVENTS ---------- */
+    form.onsubmit = e => {
+      e.preventDefault();
+      if (input.value.trim()) {
+        send(input.value.trim());
+        input.value = '';
+      }
+    };
+    input.onkeydown = e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    };
+    input.oninput = () => {
+      input.style.height = 'auto';
+      input.style.height = input.scrollHeight + 'px';
+    };
     clearBtn.onclick = initChat;
-    input.onkeydown = e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); form.requestSubmit();}};
-    input.oninput = ()=>{input.style.height='auto'; input.style.height=input.scrollHeight+'px';};
-    // voice omitted for brevity
+
+    /* ---------- VOICE ---------- */
+    const rec = 'webkitSpeechRecognition' in window
+      ? new webkitSpeechRecognition()
+      : null;
+    if (rec) {
+      rec.lang = 'en-NG';
+      micBtn.onclick = () => {
+        rec.start(); micBtn.textContent = '🎙️';
+      };
+      rec.onresult = e => {
+        let t = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i)
+          if (e.results[i].isFinal)
+            t += e.results[i][0].transcript;
+        if (t.trim()) {
+          send(t.trim());
+          input.value = '';
+        }
+        micBtn.textContent = '🎤';
+      };
+      rec.onerror = rec.onend = () => micBtn.textContent = '🎤';
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = 'Voice input not supported';
+    }
   </script>
 </body>
 </html>
