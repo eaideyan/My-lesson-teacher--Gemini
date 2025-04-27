@@ -411,22 +411,27 @@
       }
 
       // Parse progress updates
-      const progMatch = reply.match(
-        /🧠\s*Progress:\s*([🟢🟧⬜]+)\s*(?:\((\d+)\/(\d+)\))?/i
-      );
 
-      if (progMatch) {
-        let [, state, doneStr, totalStr] = progMatch;
-        const done = doneStr ? parseInt(doneStr, 10) : (state.match(/🟢/g) || []).length;
-        const total = totalStr ? parseInt(totalStr, 10) : state.length;
+const progMatch = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
 
-        // Mark all completed nodes
-        for (let i = 0; i < done; i++) {
-          markNode(i);
-        }
-        
-        updateProgress(done, total);
-      }
+if (progMatch) {
+  const [, emojis, doneStr, totalStr] = progMatch;
+  const done = parseInt(doneStr);
+  const total = parseInt(totalStr);
+  
+  // Validate emoji count matches denominator
+  if (emojis.length !== total) {
+    console.warn(`Progress mismatch! ${emojis.length} emojis vs ${total} nodes`);
+    // Auto-correct by regenerating the progress display
+    const correctedEmojis = '🟢'.repeat(done) + '⬜'.repeat(total - done);
+    updateProgress(done, total);
+    return;
+  }
+  
+  // Normal flow
+  totalNodes = total; // Lock the node count
+  updateProgress(done, total);
+}
 
       // Mobile progress fallback
       if (window.innerWidth < 768 && totalNodes > 0) {
