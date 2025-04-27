@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Dr. Maria – Your AI Tutor 🇳🇬</title>
+  <title>Uncle E. – Your AI Tutor 🇳🇬</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* ---------- BASE ---------- */
@@ -143,11 +143,11 @@
 </head>
 <body>
   <header>
-    Dr. Maria AI
-    <small>Powered by Julliard Academy</small>
+    Uncle E, AI
+    <small>Powered by ValueFirst</small>
   </header>
   /<div id="speakToggleWrapper">
-    /<label><input type="checkbox" id="speakToggle"> 🔊 Dr. Maria Speaks</label>
+    /<label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
   /</div>
 
   <main id="wrapper">
@@ -155,11 +155,14 @@
       <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
       <div id="knowledgeContent" style="overflow:auto">
         <div id="aboutMrE">
-          <p><strong>I am Dr. Maria</strong></p>
+          <p><strong>I am Uncle E.</strong></p>
           <p>
             Your friendly AI tutor! 🌟<br>
             I’ll help you learn step by step.<br>
             Feel free to ask questions and relax!
+          </p>
+          <p>
+            Remember to tell me about your topic and subject, not just subject!
           </p>
           <p><strong>Great!</strong></p>
         </div>
@@ -399,7 +402,7 @@ async function send(msg) {
   addMsg(msg, 'user');
 
   // 3) Show “thinking” indicator
-  thinking = addMsg('💭 Dr. Maria is thinking...', 'assistant');
+  thinking = addMsg('💭 Uncle E is thinking...', 'assistant');
 
   // ─── First try/catch: Only around the network call ───────────────────────────
   let data;
@@ -452,7 +455,7 @@ async function send(msg) {
       // Guaranteed welcome
       setTimeout(() => {
         addMsg(
-          "Welcome 🎉 What’s your name, grade, and what topic would you like to learn today?",
+          "Hello 🎉 What’s your name, class, and what topic and in which subject would you like to learn today?",
           'assistant'
         );
       }, 300);
