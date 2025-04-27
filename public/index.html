@@ -322,7 +322,7 @@
       setTimeout(() => pv.classList.remove('pulse'), 300);
     }
 
-    /* ---------- KNOWLEDGE TREE ---------- */
+/* ---------- KNOWLEDGE TREE ---------- */
 function setTree(txt) {
   const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
   if (!lines.length) return;
@@ -335,20 +335,15 @@ function setTree(txt) {
     console.warn(`Node count changed! Keeping original ${totalNodes} nodes`);
   }
 
-  // ... rest of tree rendering ...
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('aboutMrE').style.display = 'none';
+  document.getElementById('treeContents').innerHTML =
+    '<ol style="padding-left:1rem">' +
+      lines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('') +
+    '</ol>';
+
+  updateProgress(0, totalNodes);
 }
-
-      totalNodes = lines.length;
-      document.getElementById('knowledgeHeader').style.display = 'block';
-      document.getElementById('aboutMrE').style.display = 'none';
-      document.getElementById('treeContents').innerHTML =
-        '<ol style="padding-left:1rem">' +
-          lines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('') +
-        '</ol>';
-
-      updateProgress(0, totalNodes);
-    }
-
     /* ---------- HANDLE ASSISTANT ---------- */
     function handleAI(reply) {
       const visuals = document.getElementById('visuals');
