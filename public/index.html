@@ -45,12 +45,18 @@
       min-height: 0; overflow-y: auto; gap: .5rem;
     }
     #visuals h3 { margin-bottom: .3rem }
-    #leftSidebar {
+/* Replace the hiding rule with: */
+#leftSidebar {
   position: sticky;
-  top: 5rem; /* matches your header height + margin */
+  top: 5rem; /* Header height compensation */
   max-height: calc(100vh - 6rem);
   overflow-y: auto;
 }
+
+#progressVisual {
+  transition: transform 0.3s ease;
+}
+.pulse { transform: scale(1.05); opacity: 0.9; }
 
     /* ---------- CHAT ---------- */
     #chatBoxWrapper {
