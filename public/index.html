@@ -512,6 +512,9 @@ function initChat() {
     );
   }, 100); // Reduced from 300ms to 100ms for better UX
 }
+        // ← RE-ADD THIS LINE:
+    document.addEventListener('DOMContentLoaded', initChat);
+
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
       e.preventDefault();
