@@ -293,6 +293,14 @@ function setTree(txt) {
   // draw an empty bar for the new topic
   updateProgress(0, totalNodes);
 }
+function markNode(index) {
+  const items = document.querySelectorAll('#treeContents li');
+  if (items[index] && !items[index].textContent.includes('✅')) {
+    items[index].innerHTML = `✅ ${items[index].textContent}`;
+    // persist the tree HTML so reloads keep the checkmarks
+    localStorage.setItem('treeHTML', document.getElementById('treeContents').innerHTML);
+  }
+}
 
     /* ---------- HANDLE ASSISTANT ---------- */
 function handleAI(reply) {
@@ -374,22 +382,18 @@ const progMatch = reply.match(
 
 if (progMatch) {
   let [, state, doneStr, totalStr] = progMatch;
+  const done  = doneStr ? parseInt(doneStr,10) : (state.match(/🟢/g)||[]).length;
+  const total = totalStr ? parseInt(totalStr,10) : state.length;
 
-  // 1. Calculate progress with emoji fallback
-  const done = doneStr ? parseInt(doneStr, 10) 
-                       : (state.match(/🟢/g) || []).length;
-  const total = totalStr ? parseInt(totalStr, 10)
-                         : state.length;
-
-  // 2. Normalize state length
   state = state.slice(0, total).padEnd(total, '⬜');
-
-  // 3. Lock totalNodes to AI's stated total
   totalNodes = total;
 
-  // 4. Single update path using updateProgress()
+  // ← insert here:
+  markNode(done - 1);
+
   updateProgress(done, total);
 }
+
 
   // 10) Celebrate final mastery
   if (/You\s+MASTERED/i.test(reply)) {
