@@ -323,9 +323,20 @@
     }
 
     /* ---------- KNOWLEDGE TREE ---------- */
-    function setTree(txt) {
-      const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
-      if (!lines.length) return;
+function setTree(txt) {
+  const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
+  if (!lines.length) return;
+
+  // Initialize or confirm node count
+  if (totalNodes === 0) {
+    totalNodes = lines.length;
+    console.log(`New topic with ${totalNodes} nodes`);
+  } else if (lines.length !== totalNodes) {
+    console.warn(`Node count changed! Keeping original ${totalNodes} nodes`);
+  }
+
+  // ... rest of tree rendering ...
+}
 
       totalNodes = lines.length;
       document.getElementById('knowledgeHeader').style.display = 'block';
