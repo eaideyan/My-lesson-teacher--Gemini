@@ -487,27 +487,30 @@ if (progMatch) {
 
     /* ---------- INIT ---------- */
 function initChat() {
-  // First clear existing state
+  // Clear state
   history = [];
   student = '';
   totalNodes = 0;
+  
+  // Reset UI elements first
   chatBox.innerHTML = '';
-  
-  // Then restore any saved state
-  restoreTreeState();
-  
-  // Finally setup UI
   document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
   document.getElementById('aboutMrE').style.display = 'block';
-  updateProgress(0, 0);
-
-  // Welcome message
+  document.getElementById('knowledgeHeader').style.display = 'none';
+  document.getElementById('treeContents').innerHTML = '';
+  document.getElementById('progressVisual').textContent = '';
+  document.getElementById('progressFeedback').textContent = '';
+  
+  // Then restore saved state (if any)
+  restoreTreeState();
+  
+  // Finally add welcome message after slight delay
   setTimeout(() => {
     addMsg(
       "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
       'assistant'
     );
-  }, 300);
+  }, 100); // Reduced from 300ms to 100ms for better UX
 }
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
