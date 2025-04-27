@@ -456,7 +456,8 @@ async function send(msg) {
       document.getElementById('knowledgeHeader').style.display = 'none';
       document.getElementById('aboutMrE').style.display = 'block';
       document.getElementById('treeContents').innerHTML = '';
-      progBar('⬜', 0, 0);
+      updateProgress(0, 0);
+
 
       // Guaranteed welcome
 setTimeout(() => {
