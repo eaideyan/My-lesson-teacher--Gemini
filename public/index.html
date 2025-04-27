@@ -201,6 +201,19 @@
   </form>
 
   <script>
+    function restoreState() {
+  const treeHTML = localStorage.getItem('treeHTML');
+  const prog     = JSON.parse(localStorage.getItem('progress') || '{}');
+  if (treeHTML) {
+    document.getElementById('treeContents').innerHTML = treeHTML;
+    document.getElementById('knowledgeHeader').style.display = 'block';
+    document.getElementById('aboutMrE').style.display = 'none';
+  }
+  if (prog.total) {
+    updateProgress(prog.done, prog.total);
+  }
+}
+
     /* ---------- DOM ---------- */
     const chatBox     = document.getElementById('chat');
     const form        = document.getElementById('chat-form');
