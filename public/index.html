@@ -253,32 +253,27 @@
       setTimeout(() => d.remove(), 1300);
     }
     // ← HERE: define updateProgress immediately after confetti
+// Remove progBar() entirely and enhance updateProgress():
 function updateProgress(done = 0, total = 0) {
   const filled = '🟢'.repeat(done);
-  const empty  = '⬜'.repeat(Math.max(total - done, 0));
-  const state  = filled + empty;
-
-  document.getElementById('progressVisual').textContent =
-    `🧠 Progress: ${state} (${done}/${total} mastered!)`;
+  const empty = '⬜'.repeat(Math.max(total - done, 0));
+  
+  const pv = document.getElementById('progressVisual');
+  pv.innerHTML = `🧠 Progress: ${filled}${empty} (${done}/${total} mastered!)`;
+  pv.classList.add('pulse');
+  
+  setTimeout(() => pv.classList.remove('pulse'), 300);
+  
+  // Update feedback text
   document.getElementById('progressFeedback').textContent =
-    done === 0 ? "Let's begin! 🚀"
-  : done === total ? "Woohoo 🎉 Topic mastered!"
-  : "Great job! Keep going 🌟";
-
-  // (optional) echo into chat bubble too:
-  // if (total>0) addMsg(`🧠 Progress: ${state} (${done}/${total} mastered!)`, 'assistant');
+    done === total ? "🎉 Topic mastered!" :
+    done > 0 ? `Next: ${done+1}/${total}` : 
+               "Let's begin!";
+  
+  // New: Persist state
+  localStorage.setItem('progress', JSON.stringify({done,total}));
 }
 
-
-    /* ---------- PROGRESS BAR ---------- */
-    function progBar(state = '⬜', done = 0, total = totalNodes) {
-      document.getElementById('progressVisual').textContent =
-        `🧠 Progress: ${state} (${done}/${total} mastered!)`;
-      document.getElementById('progressFeedback').textContent =
-        done === 0 ? "Let's begin! 🚀" :
-        done === total ? "Woohoo 🎉 Topic mastered!" :
-                         "Great job! Keep going 🌟";
-    }
 
     /* ---------- KNOWLEDGE TREE ---------- */
 function setTree(txt) {
