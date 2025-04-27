@@ -486,25 +486,29 @@ if (progMatch) {
     }
 
     /* ---------- INIT ---------- */
-    function initChat() {
-      restoreTreeState();
-      history = []; student = ''; totalNodes = 0;
-      chatBox.innerHTML = '';
-      document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
-      document.getElementById('knowledgeHeader').style.display = 'none';
-      document.getElementById('aboutMrE').style.display = 'block';
-      document.getElementById('treeContents').innerHTML = '';
-      updateProgress(0, 0);
+function initChat() {
+  // First clear existing state
+  history = [];
+  student = '';
+  totalNodes = 0;
+  chatBox.innerHTML = '';
+  
+  // Then restore any saved state
+  restoreTreeState();
+  
+  // Finally setup UI
+  document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
+  document.getElementById('aboutMrE').style.display = 'block';
+  updateProgress(0, 0);
 
-      setTimeout(() => {
-        addMsg(
-          "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
-          'assistant'
-        );
-      }, 300);
-    }
-    document.addEventListener('DOMContentLoaded', initChat);
-
+  // Welcome message
+  setTimeout(() => {
+    addMsg(
+      "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
+      'assistant'
+    );
+  }, 300);
+}
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
       e.preventDefault();
