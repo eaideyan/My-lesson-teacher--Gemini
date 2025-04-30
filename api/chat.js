@@ -148,7 +148,7 @@ export default async function handler(req, res) {
      if they’re not already present.
   ------------------------------------------------------------- */
   const alreadyHasPrompt = messages.some(
-    (m) => m.role === 'user' && m.content?.includes('Mr E SUPER‑PROMPT')
+    (m) => m.role === 'user' && m.content?.includes('You are **Uncle E**')
   );
   if (!alreadyHasPrompt) {
     messages.unshift({ role: 'user', content: SYSTEM_PROMPT });
@@ -189,7 +189,7 @@ export default async function handler(req, res) {
     const reply = data.candidates[0].content.parts[0].text.trim();
     return res.status(200).json({ message: reply });
   } catch (error) {
-    console.error('Gemini Server Error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
+  console.error('💥 Gemini handler error:', error);
+  return res.status(500).json({ message: 'Internal server error', detail: error.message });
+}
 }
