@@ -1,8 +1,5 @@
 // pages/api/chat.js   (Gemini‑2.0 Flash version)
 
-/* ------------------------------------------------------------------
-   Mr E SUPER‑PROMPT vFinal  (Gemini branch)
-------------------------------------------------------------------- */
 const SYSTEM_PROMPT = `
 You are **Uncle E** — a warm, energetic Nigerian AI tutor with 25 + years of classroom experience. You are a knowledgeable and caring Nigerian teacher AI. Adapt your teaching in real-time to the student’s needs. If the student errs or hesitates, warmly encourage and try another approach. Use Nigerian examples (names like Ada or Tunde, Naira currency, local scenarios) to make concepts clear. Monitor the student’s responses for frustration or boredom – respond with empathy and adjust your style (tell a relatable story, or simplify the task) to re-engage them​
 engaged-learning.com Keep track of what the student has learned; later on, ask review questions to reinforce those points (spaced revision)​ intellecs.ai
@@ -24,12 +21,10 @@ Speak like a brilliant Nigerian teacher — clear, joyful, supportive; sprinkle
 • You **must** begin this section with the exact heading (no synonyms):
 
     Knowledge Tree for [Topic] ([Subject], Primary [Grade]):
-
   – e.g. “Knowledge Tree for Fractions (Mathematics, Primary 4):”  
   – Do not use “Learning Map,” “Here is what we will learn,” or any other phrasing.
 
 • Build the breakdown **using the Nigerian National Curriculum** for the specified grade.  
-  If you need to fill gaps, supply a UK/US example in parentheses.  
   Example:
 
     Knowledge Tree for Photosynthesis (Biology, Primary 6):
@@ -132,64 +127,80 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
-
   if (!process.env.GEMINI_API_KEY) {
     return res
       .status(500)
       .json({ message: 'GEMINI_API_KEY not configured in environment variables.' });
   }
 
-  const { conversation } = req.body;
-  const messages = [...(conversation || [])];
+  // 1. Pull in the conversation
+  const { conversation = [] } = req.body;
 
-  /* -------------------------------------------------------------
-     Gemini Flash API does not yet have a dedicated "system" role,
-     so we prepend the system instructions as the FIRST user message
-     if they’re not already present.
-  ------------------------------------------------------------- */
-  const alreadyHasPrompt = messages.some(
-    (m) => m.role === 'user' && m.content?.includes('You are **Uncle E**')
+  // 2. Check if SYSTEM_PROMPT is already there
+  const hasSystem = conversation.some(
+    (m) => m.role === 'user' && m.content.startsWith('You are **Uncle E**')
   );
-  if (!alreadyHasPrompt) {
-    messages.unshift({ role: 'user', content: SYSTEM_PROMPT });
-  }
 
-  /* Gemini expects {role, parts:[{text:""}]}  */
-  const formattedMessages = messages.map((m) => ({
+  // 3. Build our messages list: system + last N turns
+  const MAX_TURNS = 6; // last 6 user/assistant turns
+  const turns = hasSystem
+    ? conversation
+    : [{ role: 'user', content: SYSTEM_PROMPT }, ...conversation];
+
+  // Trim to only the last MAX_TURNS turns + the system prompt (index 0)
+  const relevant =
+    turns[0].content === SYSTEM_PROMPT
+      ? [turns[0], ...turns.slice(-MAX_TURNS)]
+      : turns.slice(-MAX_TURNS);
+
+  // 4. Format for Gemini
+  const formattedMessages = relevant.map((m) => ({
     role: m.role,
     parts: [{ text: m.content }],
   }));
 
-  try {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': process.env.GEMINI_API_KEY,
-        },
-        body: JSON.stringify({
-  contents: formattedMessages,
-  generationConfig: { temperature: 0.5 }   // 0 = deterministic, 1 = creative
-}),
+  // 5. Send with one retry
+  let attempt = 0,
+      lastError = null;
+
+  while (attempt < 2) {
+    try {
+      const response = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': process.env.GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            contents: formattedMessages,
+            generationConfig: { temperature: 0.5 },
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        lastError = data;
+        throw new Error('Invalid Gemini response');
       }
-    );
 
-    const data = await response.json();
-
-    if (
-      !response.ok ||
-      !data?.candidates?.[0]?.content?.parts?.[0]?.text
-    ) {
-      console.error('Gemini API Error:', data);
-      return res.status(500).json({ message: 'Gemini response failed.' });
+      // Success!
+      const reply = data.candidates[0].content.parts[0].text.trim();
+      return res.status(200).json({ message: reply });
+    } catch (err) {
+      console.error(`💥 Gemini API Error (attempt ${attempt + 1}):`, err, lastError);
+      attempt++;
+      // wait a short bit before retrying
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 200));
     }
+  }
 
-    const reply = data.candidates[0].content.parts[0].text.trim();
-    return res.status(200).json({ message: reply });
-  } catch (error) {
-  console.error('💥 Gemini handler error:', error);
-  return res.status(500).json({ message: 'Internal server error', detail: error.message });
-}
+  // If we reach here, both attempts failed
+  return res.status(500).json({
+    message: 'Gemini response failed after retry.',
+    detail: lastError || 'No additional detail',
+  });
 }
