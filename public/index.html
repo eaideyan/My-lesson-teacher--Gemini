@@ -407,7 +407,7 @@ function setTree(txt) {
       }
 
       // Update knowledge tree
-      const treeIdx = reply.indexOf('Knowledge Tree:');
+      const treeIdx = reply.search(/Knowledge Tree for\s.+?:/i);
       if (treeIdx !== -1) {
         const treeText = reply.slice(treeIdx)
           .split('\n')
