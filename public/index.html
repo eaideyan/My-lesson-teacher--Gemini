@@ -157,6 +157,12 @@
       font-size: 2.6rem; pointer-events: none;
       animation: floatUp 1.3s ease-out forwards;
     }
+    /* Make absolutely sure our progress bars are always rendered */
+#progressVisual,
+#progressFeedback {
+  display: block !important;
+}
+
   </style>
 </head>
 <body>
@@ -408,13 +414,14 @@ function setTree(txt) {
 
       // Update knowledge tree
       const treeIdx = reply.search(/Knowledge Tree for\s.+?:/i);
-      if (treeIdx !== -1) {
-        const treeText = reply.slice(treeIdx)
-          .split('\n')
-          .slice(1)
-          .join('\n');
-        setTree(treeText);
-      }
+if (treeIdx !== -1) {
+  // split at lines, find the heading line, then grab all numbered nodes
+  const lines = reply.slice(treeIdx)
+                     .split('\n')
+                     .filter(l => /^\d+\.\s/.test(l));
+  setTree(lines.join('\n'));
+}
+
 
       // Parse progress updates
 
@@ -448,8 +455,11 @@ if (progMatch) {
       // Celebrate mastery
       if (/You\s+MASTERED/i.test(reply)) {
         confetti();
+        updateProgress(totalNodes, totalNodes);
       }
     }
+// right after confetti()
+
 
     /* ---------- SEND ---------- */
     async function send(msg) {
@@ -487,33 +497,41 @@ if (progMatch) {
 
     /* ---------- INIT ---------- */
 function initChat() {
-  // Clear state
-  history = [];
-  student = '';
+  // 1) Reset state variables
+  history    = [];
+  student    = '';
   totalNodes = 0;
-  
-  // Reset UI elements first
+
+  // 2) Clear out the UI
   chatBox.innerHTML = '';
-  document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
-  document.getElementById('aboutMrE').style.display = 'block';
+  document.getElementById('visuals').innerHTML       = '<h3>🔍 Topic visuals</h3>';
+  document.getElementById('aboutMrE').style.display  = 'block';
   document.getElementById('knowledgeHeader').style.display = 'none';
-  document.getElementById('treeContents').innerHTML = '';
-  document.getElementById('progressVisual').textContent = '';
-  document.getElementById('progressFeedback').textContent = '';
-  
-  // Then restore saved state (if any)
+  document.getElementById('treeContents').innerHTML  = '';
+
+  // 3) Clear & un-hide progress bar + feedback
+  const pv = document.getElementById('progressVisual');
+  const pf = document.getElementById('progressFeedback');
+  pv.textContent   = '';
+  pf.textContent   = '';
+  pv.style.display = 'block';
+  pf.style.display = 'block';
+
+  // 4) Restore any saved tree/progress state
   restoreTreeState();
-  
-  // Finally add welcome message after slight delay
+
+  // 5) Show the welcome prompt
   setTimeout(() => {
     addMsg(
       "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
       'assistant'
     );
-  }, 100); // Reduced from 300ms to 100ms for better UX
+  }, 100);
 }
-        // ← RE-ADD THIS LINE:
-    document.addEventListener('DOMContentLoaded', initChat);
+
+// Re-attach on page load
+document.addEventListener('DOMContentLoaded', initChat);
+
 
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
