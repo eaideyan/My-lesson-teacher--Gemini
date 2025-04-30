@@ -551,7 +551,13 @@ document.addEventListener('DOMContentLoaded', initChat);
       input.style.height = 'auto';
       input.style.height = input.scrollHeight + 'px';
     };
-    clearBtn.onclick = initChat;
+    clearBtn.onclick = () => {
+   // remove saved tree + progress so next init is a true fresh start
+  localStorage.removeItem('treeState');
+  // if you stored progress separately, clear that too:
+  // localStorage.removeItem('progress');
+    initChat();
+ };
 
     /* ---------- VOICE ---------- */
     const rec = 'webkitSpeechRecognition' in window
