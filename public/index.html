@@ -354,73 +354,78 @@ function setTree(txt) {
   updateProgress(0, totalNodes);
 }
     /* ---------- HANDLE ASSISTANT ---------- */
-    function handleAI(reply) {
-      const visuals = document.getElementById('visuals');
-      visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
-      let cleanReply = reply;
+function handleAI(reply) {
+  // 1) Prepare the visuals sidebar
+  const visuals = document.getElementById('visuals');
+  visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
 
-      // Extract images
-      const images = [];
-      const imgPattern = /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi;
-      cleanReply = cleanReply.replace(imgPattern, (fullMatch, url) => {
-        images.push(url);
-        return '';
-      });
+  // 2) Extract images
+  const images = [];
+  const imgPattern = /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi;
+  let cleanReply = reply.replace(imgPattern, (match, url) => {
+    images.push(url);
+    return '';
+  });
 
-      // Extract YouTube IDs
-      const youtubeIDs = [];
-      let yt;
-      while ((yt = /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi.exec(reply)) !== null) {
-        youtubeIDs.push(yt[1]);
-        cleanReply = cleanReply.replace(yt[0], '');
-      }
+  // 3) Extract YouTube IDs
+  const youtubeIDs = [];
+  const ytPattern = /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi;
+  cleanReply = cleanReply.replace(ytPattern, (match, id) => {
+    youtubeIDs.push(id);
+    return '';
+  });
 
-      // Clean up leftover markup
-      cleanReply = cleanReply
-        .replace(/(?:Image:|!\[.*?\]\()/gi, '')
-        .replace(/\n\s*\n/g, '\n')
-        .trim();
+  // 4) Strip out the entire “Knowledge Tree” block up to the first Question 1:
+  cleanReply = cleanReply.replace(
+    /Knowledge Tree for[\s\S]*?(?=\n\s*\d+\.\s*Question\s*1:)/i,
+    ''
+  );
 
-      // ─── Strip Bloom labels in the chat text ────────────────────────────────
-// This will turn “1. 🌱 Remember/Recall: What is X?” into “1. 🌱 What is X?”
-cleanReply = cleanReply.replace(
-  /(\d+\.\s*)([🌱🔁🌟])[^:\n]*:\s*/g,
-  '$1$2 '
-);
+  // 5) Remove any leftover bloom-label lines (e.g. “🌱 Remember/Recall: …”)
+  cleanReply = cleanReply
+    .split('\n')
+    .filter(line => !/^[\p{Extended_Pictographic}].*?:/.test(line))
+    .join('\n');
 
-      // Render the assistant bubble & speak
-      addMsg(cleanReply, 'assistant');
-      speak(cleanReply);
+  // 6) Cleanup any stray markdown or empty lines
+  cleanReply = cleanReply
+    .replace(/(?:Image:|!\[.*?\]\()/gi, '')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
 
-      // Show the first image
-      if (images.length) {
-        const img = document.createElement('img');
-        img.src = images[0];
-        img.style.cssText = `
-          width: 100%;
-          max-height: 300px;
-          object-fit: contain;
-          margin: 1rem 0;
-          border-radius: 8px;
-          border: 1px solid #e5e7eb;
-        `;
-        img.onerror = () => img.remove();
-        visuals.appendChild(img);
-      }
-      // Or show YouTube embed
-      else if (youtubeIDs.length) {
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://www.youtube.com/embed/${youtubeIDs[0]}`;
-        iframe.style.cssText = `
-          width: 100%;
-          aspect-ratio: 16/9;
-          margin: 1rem 0;
-          border-radius: 8px;
-          border: none;
-        `;
-        iframe.allowFullscreen = true;
-        visuals.appendChild(iframe);
-      }
+  // 7) Render the assistant bubble & speak
+  addMsg(cleanReply, 'assistant');
+  speak(cleanReply);
+
+  // 8) Insert first image if present
+  if (images.length) {
+    const img = document.createElement('img');
+    img.src = images[0];
+    img.style.cssText = `
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    `;
+    img.onerror = () => img.remove();
+    visuals.appendChild(img);
+  }
+  // 9) Or embed YouTube video
+  else if (youtubeIDs.length) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube.com/embed/${youtubeIDs[0]}`;
+    iframe.style.cssText = `
+      width: 100%;
+      aspect-ratio: 16/9;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: none;
+    `;
+    iframe.allowFullscreen = true;
+    visuals.appendChild(iframe);
+  }
 
       // Update knowledge tree
       const treeIdx = reply.search(/Knowledge Tree for\s.+?:/i);
