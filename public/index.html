@@ -381,6 +381,13 @@ function setTree(txt) {
         .replace(/\n\s*\n/g, '\n')
         .trim();
 
+      // ─── Strip Bloom labels in the chat text ────────────────────────────────
+// This will turn “1. 🌱 Remember/Recall: What is X?” into “1. 🌱 What is X?”
+cleanReply = cleanReply.replace(
+  /(\d+\.\s*)([🌱🔁🌟])[^:\n]*:\s*/g,
+  '$1$2 '
+);
+
       // Render the assistant bubble & speak
       addMsg(cleanReply, 'assistant');
       speak(cleanReply);
