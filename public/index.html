@@ -333,20 +333,23 @@ function setTree(txt) {
   const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
   if (!lines.length) return;
 
-  // Initialize or confirm node count
-  if (totalNodes === 0) {
-    totalNodes = lines.length;
-    console.log(`New topic with ${totalNodes} nodes`);
-  } else if (lines.length !== totalNodes) {
-    console.warn(`Node count changed! Keeping original ${totalNodes} nodes`);
-  }
-
+  totalNodes = lines.length;
   document.getElementById('knowledgeHeader').style.display = 'block';
   document.getElementById('aboutMrE').style.display = 'none';
+
+  const itemsHtml = lines.map(l => {
+    // regex to split off the emoji and the student text after the colon
+    const m = l.match(/^[0-9]+\.\s*(🌱|🔁|🌟)\s*[^:]+:\s*(.*)$/);
+    if (m) {
+      const [, emoji, text] = m;
+      return `<li>${emoji} ${text.trim()}</li>`;
+    }
+    // fallback if it didn't match
+    return `<li>${l.replace(/^\d+\.\s*/, '')}</li>`;
+  }).join('');
+
   document.getElementById('treeContents').innerHTML =
-    '<ol style="padding-left:1rem">' +
-      lines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('') +
-    '</ol>';
+    `<ol style="padding-left:1rem">${itemsHtml}</ol>`;
 
   updateProgress(0, totalNodes);
 }
