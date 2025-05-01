@@ -355,49 +355,62 @@ function setTree(txt) {
 }
     /* ---------- HANDLE ASSISTANT ---------- */
 function handleAI(reply) {
-  // 1) Prepare the visuals sidebar
+  // 1) Reset the visuals pane
   const visuals = document.getElementById('visuals');
   visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
 
-  // 2) Extract images
-  const images = [];
-  const imgPattern = /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi;
-  let cleanReply = reply.replace(imgPattern, (match, url) => {
-    images.push(url);
-    return '';
-  });
+  let cleanReply = reply;
 
-  // 3) Extract YouTube IDs
-  const youtubeIDs = [];
-  const ytPattern = /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi;
-  cleanReply = cleanReply.replace(ytPattern, (match, id) => {
-    youtubeIDs.push(id);
-    return '';
-  });
-
-  // 4) Strip out the entire “Knowledge Tree” block up to the first Question 1:
+  // 2) Strip out the entire “Knowledge Tree…” section (up to “Let's start…”)
   cleanReply = cleanReply.replace(
-    /Knowledge Tree for[\s\S]*?(?=\n\s*\d+\.\s*Question\s*1:)/i,
+    /Knowledge Tree[\s\S]*?(?=Let['’]s start)/i,
     ''
   );
 
-  // 5) Remove any leftover bloom-label lines (e.g. “🌱 Remember/Recall: …”)
-  cleanReply = cleanReply
-    .split('\n')
-    .filter(line => !/^[\p{Extended_Pictographic}].*?:/.test(line))
-    .join('\n');
+  // 3) Remove any lingering bloom-label prefixes on numbered lines
+  //    e.g. “1. 🌱 Remember/Recall: What is X?” → “1. 🌱 What is X?”
+  cleanReply = cleanReply.replace(
+    /(\d+\.\s*[🌱🔁🌟])[^:\n]*:\s*/g,
+    '$1 '
+  );
 
-  // 6) Cleanup any stray markdown or empty lines
+  // 4) Also completely drop any residual numbered list lines,
+  //    in case the model still emitted them after “Let's start…”
+  cleanReply = cleanReply.replace(
+    /^\s*\d+\.\s*[🌱🔁🌟]?.*(\r?\n|$)/gm,
+    ''
+  );
+
+  // 5) Now pull out images and YouTube links as before
+  const images = [];
+  cleanReply = cleanReply.replace(
+    /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi,
+    (_, url) => {
+      images.push(url);
+      return '';
+    }
+  );
+
+  const youtubeIDs = [];
+  cleanReply = cleanReply.replace(
+    /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi,
+    (_, id) => {
+      youtubeIDs.push(id);
+      return '';
+    }
+  );
+
+  // 6) Final whitespace/markdown cleanup
   cleanReply = cleanReply
     .replace(/(?:Image:|!\[.*?\]\()/gi, '')
     .replace(/\n\s*\n/g, '\n')
     .trim();
 
-  // 7) Render the assistant bubble & speak
+  // 7) Render the bubble & optionally speak
   addMsg(cleanReply, 'assistant');
   speak(cleanReply);
 
-  // 8) Insert first image if present
+  // 8) Render first image or YouTube embed
   if (images.length) {
     const img = document.createElement('img');
     img.src = images[0];
@@ -411,6 +424,18 @@ function handleAI(reply) {
     `;
     img.onerror = () => img.remove();
     visuals.appendChild(img);
+  } else if (youtubeIDs.length) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube.com/embed/${youtubeIDs[0]}`;
+    iframe.style.cssText = `
+      width: 100%;
+      aspect-ratio: 16/9;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: none;
+    `;
+    iframe.allowFullscreen = true;
+    visuals.appendChild(iframe);
   }
   // 9) Or embed YouTube video
   else if (youtubeIDs.length) {
