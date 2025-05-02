@@ -162,6 +162,28 @@ function prepareConversation(conversation) {
   return result;
 }
 
+// ─── Helper: prune by a ~25 000-char budget ─────────────────────────────
+function prepareConversation(conv, maxChars = 25000) {
+  // Walk backward, accumulating until we hit maxChars
+  const kept = [];
+  let total = 0;
+  for (let i = conv.length - 1; i >= 0; i--) {
+    const msg = conv[i];
+    const len = msg.content.length;
+    // Always keep system prompt if it's first
+    if (i === 0) {
+      kept.push(msg);
+      continue;
+    }
+    if (total + len > maxChars) break;
+    total += len;
+    kept.push(msg);
+  }
+  // Reverse back into correct chronological order
+  return kept.reverse();
+}
+
+// ─── Your API handler ───────────────────────────────────────────────────
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -175,33 +197,29 @@ export default async function handler(req, res) {
   // 1. Pull in the conversation
   const { conversation = [] } = req.body;
 
-  // 2. Check if SYSTEM_PROMPT is already there
+  // 2. Check if SYSTEM_PROMPT is already present
   const hasSystem = conversation.some(
     (m) => m.role === 'user' && m.content.startsWith('You are **Uncle E**')
   );
 
-  // 3. Build our messages list: system + last N turns
-  const MAX_TURNS = 6; // last 6 user/assistant turns
-  const turns = hasSystem
+  // ─── REPLACE your old "MAX_TURNS" block with this ───────────────────────
+  // 3a) Inject system prompt if missing
+  const withSystem = hasSystem
     ? conversation
     : [{ role: 'user', content: SYSTEM_PROMPT }, ...conversation];
 
-  // Trim to only the last MAX_TURNS turns + the system prompt (index 0)
-  const relevant =
-    turns[0].content === SYSTEM_PROMPT
-      ? [turns[0], ...turns.slice(-MAX_TURNS)]
-      : turns.slice(-MAX_TURNS);
+  // 3b) Prune to the most recent ~25 000 characters
+  const toSend = prepareConversation(withSystem);
 
-  // 4. Format for Gemini
-  const formattedMessages = relevant.map((m) => ({
+  // 3c) Format for Gemini
+  const formattedMessages = toSend.map((m) => ({
     role: m.role,
     parts: [{ text: m.content }],
   }));
+  // ────────────────────────────────────────────────────────────────────────
 
-  // 5. Send with one retry
-  let attempt = 0,
-      lastError = null;
-
+  // 4. Send with one retry
+  let attempt = 0, lastError = null;
   while (attempt < 2) {
     try {
       const response = await fetch(
@@ -218,7 +236,6 @@ export default async function handler(req, res) {
           }),
         }
       );
-
       const data = await response.json();
 
       if (!response.ok || !data?.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -232,12 +249,11 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error(`💥 Gemini API Error (attempt ${attempt + 1}):`, err, lastError);
       attempt++;
-      // wait a short bit before retrying
       if (attempt < 2) await new Promise((r) => setTimeout(r, 200));
     }
   }
 
-  // If we reach here, both attempts failed
+  // Both retries failed
   return res.status(500).json({
     message: 'Gemini response failed after retry.',
     detail: lastError || 'No additional detail',
