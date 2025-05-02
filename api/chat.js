@@ -112,6 +112,55 @@ example Format:
 Image: https://…example.png
 Video: https://www.youtube.com/watch?v=abc123XYZ
 `.trim();
+const CHAR_LIMIT = 25000;
+
+/**
+ * Given the full conversation array, return a new array that:
+ *  - always includes the system prompt (at index 0)
+ *  - always includes the student-intro turn (first user message matching /my name is/i)
+ *  - always includes the knowledge-tree turn (first assistant message starting "Knowledge Tree for")
+ *  - then appends as many of the most recent Q/A pairs as will fit under CHAR_LIMIT
+ */
+function prepareConversation(conversation) {
+  // 1. Grab system prompt
+  const system = conversation[0];
+
+  // 2. Find student-intro
+  const introIdx = conversation.findIndex(
+    m => m.role === 'user' && /my name is/i.test(m.content)
+  );
+  const intro   = introIdx >= 0 ? conversation[introIdx] : null;
+
+  // 3. Find the Knowledge Tree generation
+  const treeIdx = conversation.findIndex(
+    m => m.role === 'assistant' && /^Knowledge Tree for/i.test(m.content)
+  );
+  const treeMsg = treeIdx >= 0 ? conversation[treeIdx] : null;
+
+  // 4. Build a “tail” of Q/A pairs (everything after the tree or intro)
+  const startTail = Math.max(treeIdx, introIdx, 1) + 1;
+  const tail      = conversation.slice(startTail);
+
+  // 5. Prune that tail by character count (keep most recent first)
+  let totalLen = tail.map(m => m.content.length).reduce((a,b)=>a+b, 0);
+  const prunedTail = [];
+  for (let i = tail.length - 1; i >= 0; i--) {
+    const msg = tail[i];
+    if (totalLen <= CHAR_LIMIT) break;
+    totalLen -= msg.content.length;
+    // drop tail[i]
+  }
+  // everything with index >= cutoff remains:
+  const cutoff = tail.findIndex((m,i)=> tail.slice(i).reduce((a,b)=>a+b.content.length,0) <= CHAR_LIMIT);
+  const keptTail = tail.slice(cutoff);
+
+  // 6. Reassemble
+  const result = [ system ];
+  if (intro)   result.push(intro);
+  if (treeMsg) result.push(treeMsg);
+  result.push(...keptTail);
+  return result;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
