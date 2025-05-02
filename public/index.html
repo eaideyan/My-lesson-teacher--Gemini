@@ -443,19 +443,16 @@ function setTree(txt) {
 // 9) Progress parsing (override model’s y with our totalNodes)
 // ─── Progress parsing & sidebar sync ────────────────────────────
 const progMatch = reply.match(
-  /🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i
+  /🧠\s*Progress:\s*[🟢⬜]+\s*\((\d+)\/\d+\)/i
 );
 if (progMatch) {
-  const [, emojis, doneStr, totalStr] = progMatch;
-  const done  = parseInt(doneStr, 10);
-  const total = parseInt(totalStr, 10);
+  // parse ONLY the “done” count, ignore the model’s denominator
+  const done = parseInt(progMatch[1], 10);
 
-  // Sync our internal denominator in case it changed
-  totalNodes = total;
-
-  // Redraw the sidebar progress bar
+  // redraw using YOUR totalNodes (never override it)
   updateProgress(done, totalNodes);
 }
+
 
     if (/You\s+MASTERED/i.test(reply)) {
       confetti();
