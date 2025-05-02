@@ -454,55 +454,6 @@ function setTree(txt) {
     }
   }
 
-      // Update knowledge tree
-      const treeIdx = reply.search(/Knowledge Tree for\s.+?:/i);
-if (treeIdx !== -1) {
-  // split at lines, find the heading line, then grab all numbered nodes
-  const lines = reply.slice(treeIdx)
-                     .split('\n')
-                     .filter(l => /^\d+\.\s/.test(l));
-  setTree(lines.join('\n'));
-}
-
-
-      // Parse progress updates
-
-const progMatch = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
-
-if (progMatch) {
-  const [, emojis, doneStr, totalStr] = progMatch;
-  const done = parseInt(doneStr);
-  const total = parseInt(totalStr);
-  
-  // Validate emoji count matches denominator
-  if (emojis.length !== total) {
-    console.warn(`Progress mismatch! ${emojis.length} emojis vs ${total} nodes`);
-    // Auto-correct by regenerating the progress display
-    const correctedEmojis = '🟢'.repeat(done) + '⬜'.repeat(total - done);
-    updateProgress(done, total);
-    return;
-  }
-  
-  // Normal flow
-  totalNodes = total; // Lock the node count
-  updateProgress(done, total);
-}
-
-      // Mobile progress fallback
-      if (window.innerWidth < 768 && totalNodes > 0) {
-        const currentDone = (document.getElementById('progressVisual').textContent.match(/🟢/g) || []).length;
-        addMsg(`📊 Progress: ${currentDone}/${totalNodes}`, 'assistant');
-      }
-
-      // Celebrate mastery
-      if (/You\s+MASTERED/i.test(reply)) {
-        confetti();
-        updateProgress(totalNodes, totalNodes);
-      }
-    }
-// right after confetti()
-
-
     /* ---------- SEND ---------- */
     async function send(msg) {
       if (!student && /my name is (\w+)/i.test(msg)) {
