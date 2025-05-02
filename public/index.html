@@ -353,115 +353,91 @@ function setTree(txt) {
 
   updateProgress(0, totalNodes);
 }
-  /* ─── HELPER: Pull out “Knowledge Tree” lines ─────────────────────────── */
-  function extractTree(reply) {
-    const lines = reply.split('\n');
-    const start = lines.findIndex(l => /^Knowledge Tree for/.test(l));
-    if (start < 0) return null;
-    const tree = [];
-    for (let i = start + 1; i < lines.length; i++) {
-      if (/^\d+\./.test(lines[i])) tree.push(lines[i]);
-      else break;
-    }
-    return tree.join('\n');
-  }
 
-  /* ─── HELPER: Strip out tree + bloom labels + numbered list ─────────── */
-  function cleanupReply(reply) {
-    // remove the entire block from "Knowledge Tree" until the next "Question"/"Let's start"
-    reply = reply.replace(
-      /Knowledge Tree[\s\S]*?(?=(Question\s+\d:|Let'?s start|$))/i,
-      ''
-    );
-
-    // drop any leftover "1. ..." lines and strip bloom prefixes ("🌱 Remember/Recall:")
-    return reply
-      .split('\n')
-      .filter(line => !/^\s*\d+\.\s/.test(line))
-      .map(line => line.replace(/(🌱|🔁|🌟)[^:]*:\s*/g, '$1 '))
-      .join('\n')
-      .trim();
-  }
-
-  /* ─── REPLACE YOUR handleAI WITH THIS ───────────────────────────────── */
-  function handleAI(reply) {
-    // 1) Reset visuals pane
-    const visuals = document.getElementById('visuals');
-    visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
-
-    // 2) Sidebar: extract and render the tree
-    const treeText = extractTree(reply);
-    if (treeText) setTree(treeText);
-
-    // 3) Clean chat text
-    let cleanReply = cleanupReply(reply);
-
-    // 4) Extract images (unchanged)
-    const images = [];
-    cleanReply = cleanReply.replace(
-      /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg)(?:\?\S*)?)/gi,
-      (_, url) => { images.push(url); return ''; }
-    );
-
-    // 5) Extract YouTube (unchanged)
-    const youtubeIDs = [];
-    cleanReply = cleanReply.replace(
-      /(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi,
-      (_, id) => { youtubeIDs.push(id); return ''; }
-    );
-
-  // 6) Final whitespace cleanup AND remove any Progress lines entirely
-  cleanReply = cleanReply
-    .replace(/\n\s*\n/g, '\n')          // collapse blank lines
-    .replace(/^.*🧠\s*Progress:.*$/gmi, '') // drop any “Progress:” line
-    .trim();
-
-    // 7) Render bubble & speak
-    addMsg(cleanReply, 'assistant');
-    speak(cleanReply);
-
-    // 8) Show first image or YouTube embed
-    if (images.length) {
-      const img = document.createElement('img');
-      img.src = images[0];
-      img.style.cssText = `
-        width:100%; max-height:300px;
-        object-fit:contain; margin:1rem 0;
-        border-radius:8px; border:1px solid #e5e7eb;
-      `;
-      img.onerror = () => img.remove();
-      visuals.appendChild(img);
-    } else if (youtubeIDs.length) {
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${youtubeIDs[0]}`;
-      iframe.style.cssText = `
-        width:100%; aspect-ratio:16/9;
-        margin:1rem 0; border:none;
-        border-radius:8px;
-      `;
-      iframe.allowFullscreen = true;
-      visuals.appendChild(iframe);
-    }
-
-// 9) Progress parsing (override model’s y with our totalNodes)
-// ─── Progress parsing & sidebar sync ────────────────────────────
-const progMatch = reply.match(
-  /🧠\s*Progress:\s*[🟢⬜]+\s*\((\d+)\/\d+\)/i
-);
-if (progMatch) {
-  // parse ONLY the “done” count, ignore the model’s denominator
-  const done = parseInt(progMatch[1], 10);
-
-  // redraw using YOUR totalNodes (never override it)
-  updateProgress(done, totalNodes);
+// ── NEW helper: pull out the entire “Knowledge Tree…” block ─────────────
+function extractTree(reply) {
+  const m = reply.match(
+    /(Knowledge Tree for[\s\S]*?)(?=\n[^0-9]|\nQuestion|\nLet'?s start|$)/
+  );
+  return m ? m[1] : null;
 }
 
+// ── Slim cleanup: drop the tree block entirely from the chat text ─────────
+function cleanupReply(reply) {
+  return reply
+    .replace(
+      /(Knowledge Tree for[\s\S]*?)(?=\n[^0-9]|\nQuestion|\nLet'?s start|$)/,
+      ''
+    )
+    .trim();
+}
 
-    if (/You\s+MASTERED/i.test(reply)) {
-      confetti();
-      updateProgress(totalNodes, totalNodes);
-    }
+// ── OVERWRITE your old handleAI with this ────────────────────────────────
+function handleAI(reply) {
+  // 1) Reset visuals
+  const visuals = document.getElementById('visuals');
+  visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
+
+  // 2) Sidebar: extract & render tree
+  const treeText = extractTree(reply);
+  if (treeText) {
+    // `setTree` expects a "\n1. …\n2. …" string
+    // drop the heading line, keep only numbered lines:
+    const nodesOnly = treeText
+      .split('\n')
+      .filter(line => /^\d+\./.test(line))
+      .join('\n');
+    setTree(nodesOnly);
   }
+
+  // 3) Clean up chat text
+  let clean = cleanupReply(reply);
+
+  // 4) Extract images
+  const images = [];
+  clean = clean.replace(
+    /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg))/gi,
+    (_, url) => (images.push(url), '')
+  );
+
+  // 5) Extract YouTube
+  const youtube = [];
+  clean = clean.replace(
+    /(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi,
+    (_, id) => (youtube.push(id), '')
+  ).trim();
+
+  // 6) Render chat bubble & optional TTS
+  addMsg(clean, 'assistant');
+  speak(clean);
+
+  // 7) Show first image or video
+  if (images.length) {
+    const img = document.createElement('img');
+    img.src = images[0];
+    img.style = 'width:100%; max-height:300px; object-fit:contain; margin:1rem 0;';
+    visuals.appendChild(img);
+  } else if (youtube.length) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube.com/embed/${youtube[0]}`;
+    iframe.style = 'width:100%; aspect-ratio:16/9; margin:1rem 0; border:none;';
+    visuals.appendChild(iframe);
+  }
+
+  // 8) Progress bar parsing stays the same
+  const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
+  if (prog) {
+    const done = +prog[2], total = +prog[3];
+    totalNodes = total;
+    updateProgress(done, totalNodes);
+  }
+
+  // 9) Celebrate mastery
+  if (/You\s+MASTERED/i.test(reply)) {
+    confetti();
+    updateProgress(totalNodes, totalNodes);
+  }
+}
 
     /* ---------- SEND ---------- */
     async function send(msg) {
