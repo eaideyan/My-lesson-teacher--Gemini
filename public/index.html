@@ -410,11 +410,11 @@ function setTree(txt) {
       (_, id) => { youtubeIDs.push(id); return ''; }
     );
 
-+  // 6) Final whitespace cleanup AND remove any Progress lines entirely
-+  cleanReply = cleanReply
-+    .replace(/\n\s*\n/g, '\n')          // collapse blank lines
-+    .replace(/^.*🧠\s*Progress:.*$/gmi, '') // drop any “Progress:” line
-+    .trim();
+  // 6) Final whitespace cleanup AND remove any Progress lines entirely
+  cleanReply = cleanReply
+    .replace(/\n\s*\n/g, '\n')          // collapse blank lines
+    .replace(/^.*🧠\s*Progress:.*$/gmi, '') // drop any “Progress:” line
+    .trim();
 
     // 7) Render bubble & speak
     addMsg(cleanReply, 'assistant');
