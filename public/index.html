@@ -440,14 +440,13 @@ function setTree(txt) {
       visuals.appendChild(iframe);
     }
 
-    // 9) Progress parsing & confetti (unchanged)
-    const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
-    if (prog) {
-      const done = parseInt(prog[2], 10),
-            total = parseInt(prog[3], 10);
-      totalNodes = total;
-      updateProgress(done, total);
-    }
+// 9) Progress parsing (override model’s y with our totalNodes)
+const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/\d+\)/i);
+if (prog) {
+  const done = parseInt(prog[2], 10);
+  // Always use the sidebar’s totalNodes as the denominator
+  updateProgress(done, totalNodes);
+}
     if (/You\s+MASTERED/i.test(reply)) {
       confetti();
       updateProgress(totalNodes, totalNodes);
