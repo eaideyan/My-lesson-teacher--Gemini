@@ -356,19 +356,27 @@ function setTree(txt) {
 
 // ── NEW helper: pull out the entire “Knowledge Tree…” block ─────────────
 function extractTree(reply) {
-  const m = reply.match(
-    /(Knowledge Tree for[\s\S]*?)(?=\n[^0-9]|\nQuestion|\nLet'?s start|$)/
-  );
-  return m ? m[1] : null;
+  const lines = reply.split('\n');
+  const start = lines.findIndex(l => /^Knowledge Tree for/.test(l));
+  if (start < 0) return null;
+  const tree = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^\d+\./.test(lines[i])) tree.push(lines[i]);
+    else break;
+  }
+  return tree.join('\n');
 }
 
-// ── Slim cleanup: drop the tree block entirely from the chat text ─────────
 function cleanupReply(reply) {
+  reply = reply.replace(
+    /Knowledge Tree[\s\S]*?(?=(Question\s+\d:|Let'?s start|$))/i,
+    ''
+  );
   return reply
-    .replace(
-      /(Knowledge Tree for[\s\S]*?)(?=\n[^0-9]|\nQuestion|\nLet'?s start|$)/,
-      ''
-    )
+    .split('\n')
+    .filter(line => !/^\s*\d+\.\s/.test(line))
+    .map(line => line.replace(/(🌱|🔁|🌟)[^:]*:\s*/g, '$1 '))
+    .join('\n')
     .trim();
 }
 
@@ -381,8 +389,6 @@ function handleAI(reply) {
   // 2) Sidebar: extract & render tree
   const treeText = extractTree(reply);
   if (treeText) {
-    // `setTree` expects a "\n1. …\n2. …" string
-    // drop the heading line, keep only numbered lines:
     const nodesOnly = treeText
       .split('\n')
       .filter(line => /^\d+\./.test(line))
@@ -424,7 +430,7 @@ function handleAI(reply) {
     visuals.appendChild(iframe);
   }
 
-  // 8) Progress bar parsing stays the same
+  // 8) Progress bar parsing
   const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
   if (prog) {
     const done = +prog[2], total = +prog[3];
