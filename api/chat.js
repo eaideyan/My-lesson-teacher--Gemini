@@ -229,68 +229,102 @@ export default async function handler(req, res) {
       .json({ message: 'GEMINI_API_KEY not configured in environment variables.' });
   }
 
-  // 1. Pull in the conversation
-  const { conversation = [] } = req.body;
+  try {
+    // 1. Pull in the conversation
+    const { conversation = [] } = req.body;
 
-  // 2. Check if SYSTEM_PROMPT is already present
-  const hasSystem = conversation.some(
-    (m) => m.role === 'user' && m.content.startsWith('You are **Uncle E**')
-  );
+    // 2. Check if SYSTEM_PROMPT is already present
+    const hasSystem = conversation.some(
+      (m) => m.role === 'user' && m.content.startsWith('You are **Uncle E**')
+    );
 
-  // 3a) Inject system prompt if missing
-  const withSystem = hasSystem
-    ? conversation
-    : [{ role: 'user', content: SYSTEM_PROMPT }, ...conversation];
+    // 3a) Inject system prompt if missing
+    const withSystem = hasSystem
+      ? conversation
+      : [{ role: 'user', content: SYSTEM_PROMPT }, ...conversation];
 
-  // 3b) Prune to the most recent ~25 000 characters
-  const toSend = prepareConversation(withSystem);
+    // 3b) Prune to the most recent ~25 000 characters
+    const toSend = prepareConversation(withSystem);
 
-  // 3c) Format for Gemini
-  const formattedMessages = toSend.map((m) => ({
-    role: m.role,
-    parts: [{ text: m.content }],
-  }));
+    // 3c) Format for Gemini
+    const formattedMessages = toSend.map((m) => ({
+      role: m.role,
+      parts: [{ text: m.content }],
+    }));
 
-  // 4. Send with one retry
-  let attempt = 0, lastError = null;
-  while (attempt < 2) {
-    try {
-      const response = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': process.env.GEMINI_API_KEY,
-          },
-          body: JSON.stringify({
-            contents: formattedMessages,
-            generationConfig: { temperature: 0.5 },
-          }),
+    // 4. Send with one retry
+    let attempt = 0, lastError = null;
+    while (attempt < 2) {
+      try {
+        console.log(`Attempt ${attempt + 1} to call Gemini API`);
+        const response = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': process.env.GEMINI_API_KEY,
+            },
+            body: JSON.stringify({
+              contents: formattedMessages,
+              generationConfig: { temperature: 0.5 },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Gemini API error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+          throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
         }
-      );
-      const data = await response.json();
 
-      if (!response.ok || !data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        lastError = data;
-        throw new Error('Invalid Gemini response');
+        const data = await response.json();
+        
+        if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          console.error('Invalid Gemini response structure:', data);
+          throw new Error('Invalid Gemini response structure');
+        }
+
+        // Success! Process the response
+        const reply = data.candidates[0].content.parts[0].text.trim();
+        console.log('Processing Gemini response...');
+        const processed = processResponse(reply);
+        
+        // Log image extraction results
+        if (processed.images && processed.images.length > 0) {
+          console.log('Extracted images:', processed.images);
+        } else {
+          console.log('No images found in response');
+        }
+        
+        return res.status(200).json(processed);
+      } catch (err) {
+        console.error(`💥 Gemini API Error (attempt ${attempt + 1}):`, err);
+        lastError = err;
+        attempt++;
+        if (attempt < 2) {
+          console.log('Retrying after error...');
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
-
-      // Success! Process the response
-      const reply = data.candidates[0].content.parts[0].text.trim();
-      const processed = processResponse(reply);
-      
-      return res.status(200).json(processed);
-    } catch (err) {
-      console.error(`💥 Gemini API Error (attempt ${attempt + 1}):`, err, lastError);
-      attempt++;
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 200));
     }
-  }
 
-  // Both retries failed
-  return res.status(500).json({
-    message: 'Gemini response failed after retry.',
-    detail: lastError || 'No additional detail',
-  });
+    // Both retries failed
+    console.error('All retry attempts failed');
+    return res.status(500).json({
+      message: 'Failed to get response from Gemini API after retries',
+      error: lastError?.message || 'Unknown error'
+    });
+  } catch (error) {
+    // Catch any other unexpected errors
+    console.error('Unexpected error in chat handler:', error);
+    return res.status(500).json({
+      message: 'An unexpected error occurred',
+      error: error.message
+    });
+  }
 } 
