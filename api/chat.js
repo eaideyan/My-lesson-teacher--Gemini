@@ -280,44 +280,105 @@ function prepareConversation(conv, maxChars = 25000) {
   return kept.reverse();
 }
 
+// Add rate limiting and caching
+const rateLimit = {
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 20, // requests per window
+  cache: new Map()
+};
+
+// Simple in-memory cache
+const responseCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const windowStart = now - rateLimit.windowMs;
+  
+  // Clean up old entries
+  for (const [key, time] of rateLimit.cache.entries()) {
+    if (time < windowStart) rateLimit.cache.delete(key);
+  }
+  
+  // Count requests in current window
+  const requests = Array.from(rateLimit.cache.values())
+    .filter(time => time > windowStart)
+    .length;
+    
+  if (requests >= rateLimit.maxRequests) {
+    return false;
+  }
+  
+  rateLimit.cache.set(crypto.randomUUID(), now);
+  return true;
+}
+
+// Cache key generator
+function generateCacheKey(conversation) {
+  const lastMsg = conversation[conversation.length - 1]?.content || '';
+  const contextMsgs = conversation.slice(-3).map(m => m.content).join('|');
+  return `${lastMsg}|${contextMsgs}`.slice(0, 100);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
-  if (!process.env.GEMINI_API_KEY) {
-    return res
-      .status(500)
-      .json({ message: 'GEMINI_API_KEY not configured in environment variables.' });
-  }
 
   try {
-    // 1. Pull in the conversation
-    const { conversation = [] } = req.body;
+    // Rate limiting
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({
+        message: 'Too many requests. Please wait a minute and try again.'
+      });
+    }
 
-    // 2. Check if SYSTEM_PROMPT is already present
+    // Check cache
+    const { conversation = [] } = req.body;
+    const cacheKey = generateCacheKey(conversation);
+    const cached = responseCache.get(cacheKey);
+    
+    if (cached) {
+      console.log('Cache hit:', cacheKey);
+      return res.status(200).json(cached);
+    }
+
+    // Validate API key
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ 
+        message: 'GEMINI_API_KEY not configured in environment variables.' 
+      });
+    }
+
+    // Prepare conversation
     const hasSystem = conversation.some(
       (m) => m.role === 'user' && m.content.startsWith('You are **Uncle E**')
     );
 
-    // 3a) Inject system prompt if missing
     const withSystem = hasSystem
       ? conversation
       : [{ role: 'user', content: SYSTEM_PROMPT }, ...conversation];
 
-    // 3b) Prune to the most recent ~25 000 characters
     const toSend = prepareConversation(withSystem);
-
-    // 3c) Format for Gemini
     const formattedMessages = toSend.map((m) => ({
       role: m.role,
       parts: [{ text: m.content }],
     }));
 
-    // 4. Send with one retry
-    let attempt = 0, lastError = null;
-    while (attempt < 2) {
+    // API call with retries and timeout
+    let attempt = 0;
+    let lastError = null;
+    const maxRetries = 2;
+    const timeout = 15000; // 15 seconds
+
+    while (attempt < maxRetries) {
       try {
         console.log(`Attempt ${attempt + 1} to call Gemini API`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
         const response = await fetch(
           'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
           {
@@ -330,8 +391,11 @@ export default async function handler(req, res) {
               contents: formattedMessages,
               generationConfig: { temperature: 0.5 },
             }),
+            signal: controller.signal
           }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -350,42 +414,39 @@ export default async function handler(req, res) {
           throw new Error('Invalid Gemini response structure');
         }
 
-        // Success! Process the response
         const reply = data.candidates[0].content.parts[0].text.trim();
-        console.log('Processing Gemini response...');
         const processed = processResponse(reply);
         
-        // Log image extraction results
-        if (processed.visuals && processed.visuals.length > 0) {
-          console.log('Extracted visuals:', processed.visuals);
-        } else {
-          console.log('No visuals found in response');
-        }
+        // Cache the successful response
+        responseCache.set(cacheKey, processed);
+        setTimeout(() => responseCache.delete(cacheKey), CACHE_TTL);
         
         return res.status(200).json(processed);
+
       } catch (err) {
         console.error(`💥 Gemini API Error (attempt ${attempt + 1}):`, err);
         lastError = err;
         attempt++;
-        if (attempt < 2) {
+        
+        if (attempt < maxRetries) {
           console.log('Retrying after error...');
-          await new Promise((r) => setTimeout(r, 1000));
+          await new Promise((r) => setTimeout(r, 1000 * attempt)); // Exponential backoff
         }
       }
     }
 
-    // Both retries failed
+    // All retries failed
     console.error('All retry attempts failed');
     return res.status(500).json({
       message: 'Failed to get response from Gemini API after retries',
       error: lastError?.message || 'Unknown error'
     });
+
   } catch (error) {
-    // Catch any other unexpected errors
     console.error('Unexpected error in chat handler:', error);
     return res.status(500).json({
       message: 'An unexpected error occurred',
       error: error.message
     });
   }
-} 
+}
