@@ -461,23 +461,26 @@ function handleAI(reply) {
     updateProgress(done, totalNodes);
   }
 
-  // ─── 9) Celebrate mastery & inject or trust the model’s summary
-  const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
-  if (didMaster) {
-    confetti();
-    // If the model already printed its own “🎉 You MASTERED…” we show nothing more.
-    // But ensure the sidebar is fully green:
-    updateProgress(totalNodes, totalNodes);
+// ─── 9) Celebrate mastery & inject or trust the model’s summary
+const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
+if (didMaster) {
+  confetti();
+  // Model already gave a “🎉 You MASTERED…” message—
+  // just sync the sidebar
+  updateProgress(totalNodes, totalNodes);
 
-  } else if (prog && prog[2] === prog[3]) {
-    // If it hit 5/5 or x/x but didn’t give the summary text, we add a fallback.
-    confetti();
-    const summary = 
-      `🎉 You MASTERED ${currentTopic || 'this topic'}, ${student}! Congratulations! 👏👏👏\n` +
-      `Ready for a bonus challenge or a new topic?`;
-    addMsg(summary, 'assistant');
-    // Sidebar is already at 100%.
-  }
+} else if (prog && prog[2] === prog[3]) {
+  // Model hit x/x but forgot to send its own summary.
+  confetti();
+
+  // 1) Sync sidebar to 100%
+  updateProgress(totalNodes, totalNodes);
+
+  // 2) Inject our summary bubble
+  const summary =
+    `🎉 You MASTERED ${currentTopic || 'this topic'}, ${student}! Congratulations! 👏👏👏\n` +
+    `Ready for a bonus challenge or a new topic?`;
+  addMsg(summary, 'assistant');
 }
 
 
