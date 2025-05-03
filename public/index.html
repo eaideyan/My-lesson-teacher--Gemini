@@ -580,7 +580,38 @@ function initChat() {
 
 // Re-attach on page load
 document.addEventListener('DOMContentLoaded', initChat);
+  // ─── NEW: show an empty tree scaffold immediately ──────────────────────
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('treeContents').innerHTML = `
+    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
+      <li>…waiting for today’s plan…</li>
+    </ol>
+  `;
 
+  // 5) Show the welcome prompt
+  setTimeout(() => {
+    addMsg(
+      "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
+      'assistant'
+    );
+  }, 100);
+}
+  // ─── NEW: show an empty tree scaffold immediately ──────────────────────
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('treeContents').innerHTML = `
+    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
+      <li>…waiting for today’s plan…</li>
+    </ol>
+  `;
+
+  // 5) Show the welcome prompt
+  setTimeout(() => {
+    addMsg(
+      "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
+      'assistant'
+    );
+  }, 100);
+}
 
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
