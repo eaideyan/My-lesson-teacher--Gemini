@@ -124,37 +124,54 @@ Video: https://www.youtube.com/watch?v=abc123XYZ
 // Add helper functions for processing responses
 function extractImages(text) {
   const images = [];
+  const validDomains = [
+    'upload.wikimedia.org',
+    'commons.wikimedia.org',
+    'www.mathsisfun.com',
+    'education.gov.ng'
+  ];
   
-  // Match Image: https://... format with validation
+  // Helper to validate URLs
+  const isValidImageUrl = (url) => {
+    try {
+      const urlObj = new URL(url);
+      // Check domain
+      const isValidDomain = validDomains.some(domain => 
+        urlObj.hostname.toLowerCase().endsWith(domain)
+      );
+      // Check file extension
+      const hasValidExt = /\.(png|jpg|jpeg|gif|svg)$/i.test(urlObj.pathname);
+      // Ensure HTTPS for security
+      const isHttps = urlObj.protocol === 'https:';
+      
+      return isValidDomain && hasValidExt && isHttps;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Match Image: https://... format
   const imageMatches = text.match(/Image:\s*(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|svg))/gi);
   if (imageMatches) {
     const validUrls = imageMatches
       .map(m => m.replace(/^Image:\s*/i, ''))
-      .filter(url => {
-        // Only allow specific trusted domains
-        const domain = new URL(url).hostname.toLowerCase();
-        return domain.includes('wikimedia.org') ||
-               domain.includes('mathsisfun.com') ||
-               domain.includes('education.gov.ng');
-      });
+      .filter(isValidImageUrl);
     images.push(...validUrls);
   }
   
-  // Match ![alt](url) format with validation
+  // Match ![alt](url) format
   const markdownMatches = text.match(/!\[.*?\]\((https?:\/\/[^\s)]+\.(?:png|jpg|jpeg|gif|svg))\)/g);
   if (markdownMatches) {
     const validUrls = markdownMatches
       .map(m => m.match(/\((https?:\/\/[^\s)]+)\)/)[1])
-      .filter(url => {
-        const domain = new URL(url).hostname.toLowerCase();
-        return domain.includes('wikimedia.org') ||
-               domain.includes('mathsisfun.com') ||
-               domain.includes('education.gov.ng');
-      });
+      .filter(isValidImageUrl);
     images.push(...validUrls);
   }
   
-  return images;
+  // Deduplicate and ensure HTTPS
+  return [...new Set(images)]
+    .map(url => url.replace(/^http:/, 'https:'))
+    .slice(0, 3); // Limit to 3 images max
 }
 
 function processResponse(reply) {
