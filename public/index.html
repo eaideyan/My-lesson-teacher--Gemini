@@ -329,39 +329,6 @@
       setTimeout(() => pv.classList.remove('pulse'), 300);
     }
 
-/* ---------- KNOWLEDGE TREE ---------- */
-function setTree(txt) {
-  const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
-  if (!lines.length) return;
-
-  totalNodes = lines.length;
-  document.getElementById('knowledgeHeader').style.display = 'block';
-  document.getElementById('aboutMrE').style.display = 'none';
-
-  const grade = window.studentGrade || 0;
-
-  if (grade <= 3) {
-    // for Primary 1–3: show only a simple progress bar
-    updateProgress(0, totalNodes);
-    return;
-  }
-
-  // for grade ≥4: full tree
-  const itemsHtml = lines.map(l => {
-    const m = l.match(/^[0-9]+\.\s*(🌱|🔁|🌟)[^:]*:\s*(.*)$/);
-    if (m) {
-      const [, emoji, text] = m;
-      return `<li>${emoji} ${text.trim()}</li>`;
-    }
-    return `<li>${l.replace(/^\d+\.\s*/, '')}</li>`;
-  }).join('');
-
-  document.getElementById('treeContents').innerHTML =
-    `<ol style="padding-left:1rem">${itemsHtml}</ol>`;
-
-  // reset the bar to zero mastered
-  updateProgress(0, totalNodes);
-}
 
 // ── NEW helper: pull out the entire “Knowledge Tree…” block ─────────────
 function extractTree(reply) {
@@ -387,6 +354,33 @@ function cleanupReply(reply) {
     .map(line => line.replace(/(🌱|🔁|🌟)[^:]*:\s*/g, '$1 '))
     .join('\n')
     .trim();
+}
+function setTree(txt) {
+  const lines = txt.split('\n').filter(l => /^\d+\./.test(l));
+  if (!lines.length) return;
+
+  totalNodes = lines.length;
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('aboutMrE').style.display = 'none';
+
+  const grade = window.studentGrade || 0;
+  if (grade <= 3) {
+    // Primary 1–3: just show a progress bar
+    updateProgress(0, totalNodes);
+    return;
+  }
+
+  // Grade ≥4: show full tree
+  const itemsHtml = lines.map(l => {
+    const m = l.match(/^[0-9]+\.\s*(🌱|🔁|🌟)[^:]*:\s*(.*)$/);
+    return m
+      ? `<li>${m[1]} ${m[2].trim()}</li>`
+      : `<li>${l.replace(/^\d+\.\s*/, '')}</li>`;
+  }).join('');
+
+  document.getElementById('treeContents').innerHTML =
+    `<ol style="padding-left:1rem">${itemsHtml}</ol>`;
+  updateProgress(0, totalNodes);
 }
 
   // ─── OVERWRITE this entire function ─────────────────────────────────────────
