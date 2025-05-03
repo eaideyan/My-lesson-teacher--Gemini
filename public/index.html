@@ -479,30 +479,40 @@
           let hasValidImage = false;
           let errorCount = 0;
           
+          const loadImage = async (url) => {
+            return new Promise((resolve, reject) => {
+              const img = new Image();
+              img.onload = () => resolve(img);
+              img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+              img.src = url;
+            });
+          };
+          
           for (const url of images) {
-            console.log('Attempting to load image:', url);
+            console.log('Processing image URL:', url);
             
-            // Clean and validate the URL
-            let cleanUrl = url.trim();
-            if (!cleanUrl.startsWith('http')) {
-              cleanUrl = 'https://' + cleanUrl;
-            }
+            const imgWrapper = document.createElement('div');
+            imgWrapper.style.cssText = `
+              position: relative;
+              min-height: 100px;
+              background: #f8fafc;
+              border-radius: 8px;
+              overflow: hidden;
+            `;
             
-            // Ensure proper URL encoding for special characters
-            try {
-              const urlObj = new URL(cleanUrl);
-              cleanUrl = urlObj.toString();
-            } catch (e) {
-              console.error('Invalid URL:', cleanUrl);
-              errorCount++;
-              continue;
-            }
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.style.cssText = `
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              color: #64748b;
+              font-size: 0.9rem;
+            `;
+            loadingIndicator.textContent = 'Loading visual aid...';
+            imgWrapper.appendChild(loadingIndicator);
             
             const img = document.createElement('img');
-            img.crossOrigin = "anonymous"; // Try to handle CORS issues
-            img.referrerPolicy = "no-referrer"; // Handle referrer policy issues
-            img.loading = 'lazy';
-            img.alt = 'Topic visual';
             img.style.cssText = `
               opacity: 0;
               transition: opacity 0.3s ease;
@@ -511,59 +521,41 @@
               border-radius: 8px;
               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             `;
+            img.alt = 'Topic visual';
+            img.loading = 'lazy';
             
-            // Show image smoothly when loaded
-            img.onload = () => {
-              console.log('Image loaded successfully:', cleanUrl);
+            try {
+              // Clean up URL
+              let cleanUrl = url.trim()
+                .replace(/^https?:/, 'https:') // Force HTTPS
+                .replace(/\/thumb\//, '/') // Remove thumbnail path
+                .replace(/\/\d+px-/, '/') // Remove size constraints
+                .replace(/%20/g, '_'); // Replace spaces with underscores
+              
+              console.log('Attempting to load image:', cleanUrl);
+              
+              // Try to load the image
+              const loadedImg = await loadImage(cleanUrl);
+              img.src = cleanUrl;
               img.style.opacity = '1';
               hasValidImage = true;
-            };
-            
-            // Enhanced error handling with multiple retries
-            img.onerror = async () => {
-              console.error('Failed to load image:', cleanUrl);
-              const retryCount = (img.dataset.retries || 0) * 1 + 1;
-              
-              if (retryCount <= 3) {
-                img.dataset.retries = retryCount;
-                console.log(`Retry attempt ${retryCount} for image:`, cleanUrl);
-                
-                // Try different URL variations
-                const variations = [
-                  cleanUrl,
-                  cleanUrl.replace(/^https:/, 'http:'),
-                  cleanUrl.replace(/^http:/, 'https:'),
-                  cleanUrl.replace('/thumb/', '/'),
-                  cleanUrl.replace(/\/\d+px-/, '/') // Remove size constraint
-                ];
-                
-                for (const newUrl of variations) {
-                  if (!img.parentNode) break; // Stop if image was removed
-                  
-                  try {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    console.log('Trying variation:', newUrl);
-                    img.src = newUrl;
-                    return; // Exit after trying new URL
-                  } catch (e) {
-                    console.error('Error with URL variation:', e);
-                  }
-                }
-              }
-              
+              loadingIndicator.remove();
+              imgWrapper.appendChild(img);
+            } catch (error) {
+              console.error('Image load error:', error);
               errorCount++;
-              console.log(`Image error count: ${errorCount}/${images.length}`);
+              
               if (errorCount === images.length) {
                 // All images failed
-                const err = createErrorElement();
-                imgContainer.appendChild(err);
+                imgWrapper.innerHTML = '';
+                imgWrapper.appendChild(createErrorElement());
+              } else {
+                // Remove failed image wrapper
+                imgWrapper.remove();
               }
-              img.remove();
-            };
+            }
             
-            // Set the source last
-            img.src = cleanUrl;
-            imgContainer.appendChild(img);
+            imgContainer.appendChild(imgWrapper);
           }
           
           visuals.appendChild(imgContainer);
