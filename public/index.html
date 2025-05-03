@@ -499,6 +499,16 @@ function cleanupReply(reply) {
       addMsg(summary, 'assistant');
     }
   }
+    // ─── after this block in send(): ────────────────────────────────────────
+    if (!student && /my name is (\w+)/i.test(msg)) {
+      student = msg.match(/my name is (\w+)/i)[1];
+    }
+    // ─── NEW: grab grade (Primary X) and store it globally ─────────────────
+    if (!window.studentGrade) {
+      const gm = msg.match(/primary\s*([1-9])/i);
+      window.studentGrade = gm ? parseInt(gm[1], 10) : null;
+      // now you can use window.studentGrade elsewhere
+    }
 
     /* ---------- SEND ---------- */
     async function send(msg) {
