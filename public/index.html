@@ -438,12 +438,24 @@ function handleAI(reply) {
     updateProgress(done, totalNodes);
   }
 
-  // 9) Celebrate mastery
-  if (/You\s+MASTERED/i.test(reply)) {
-    confetti();
-    updateProgress(totalNodes, totalNodes);
-  }
+// 9) Celebrate mastery (model‐driven)
+if (/🎉\s*You\s+MASTERED/i.test(reply)) {
+  // Model _did_ give us a summary. Just render it.
+  // (We already did addMsg(clean, 'assistant') above.)
+  confetti();
+  // Sync sidebar one last time:
+  updateProgress(totalNodes, totalNodes);
 }
+else {
+  // Model never sent a summary → inject a default one **without** overriding any dynamic suggestion
+  confetti();
+  addMsg(
+    `🎉 You MASTERED ${currentTopic}, ${student}! Clap for yourself! 👏👏👏\n` +
+    `Ready for a bonus challenge or a new topic?`, 
+    'assistant'
+  );
+}
+
 
     /* ---------- SEND ---------- */
     async function send(msg) {
