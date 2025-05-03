@@ -550,6 +550,14 @@ function initChat() {
   student    = '';
   totalNodes = 0;
 
+  // 2) Show empty “waiting for today’s plan…” tree
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('treeContents').innerHTML = `
+    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
+      <li>…waiting for today’s plan…</li>
+    </ol>
+  `;
+
   // 3) Clear & un-hide progress bar + feedback
   const pv = document.getElementById('progressVisual');
   const pf = document.getElementById('progressFeedback');
