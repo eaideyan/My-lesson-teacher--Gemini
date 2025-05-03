@@ -131,22 +131,32 @@ function extractImages(text) {
     'education.gov.ng'
   ];
   
-  // Helper to validate URLs
-  const isValidImageUrl = (url) => {
+  // Helper to validate and clean URLs
+  const validateAndCleanUrl = (url) => {
     try {
       const urlObj = new URL(url);
+      
       // Check domain
       const isValidDomain = validDomains.some(domain => 
         urlObj.hostname.toLowerCase().endsWith(domain)
       );
-      // Check file extension
-      const hasValidExt = /\.(png|jpg|jpeg|gif|svg)$/i.test(urlObj.pathname);
-      // Ensure HTTPS for security
-      const isHttps = urlObj.protocol === 'https:';
       
-      return isValidDomain && hasValidExt && isHttps;
+      if (!isValidDomain) return null;
+      
+      // Clean up Wikimedia URLs
+      if (urlObj.hostname.includes('wikimedia.org')) {
+        // Remove thumbnail size constraints
+        url = url.replace(/\/\d+px-/, '/');
+        // Remove /thumb/ from path if present
+        url = url.replace('/thumb/', '/');
+        // Ensure HTTPS
+        url = url.replace(/^http:/, 'https:');
+      }
+      
+      return url;
     } catch (e) {
-      return false;
+      console.error('Invalid URL:', url, e);
+      return null;
     }
   };
 
@@ -155,7 +165,8 @@ function extractImages(text) {
   if (imageMatches) {
     const validUrls = imageMatches
       .map(m => m.replace(/^Image:\s*/i, ''))
-      .filter(isValidImageUrl);
+      .map(validateAndCleanUrl)
+      .filter(Boolean); // Remove null values
     images.push(...validUrls);
   }
   
@@ -164,14 +175,13 @@ function extractImages(text) {
   if (markdownMatches) {
     const validUrls = markdownMatches
       .map(m => m.match(/\((https?:\/\/[^\s)]+)\)/)[1])
-      .filter(isValidImageUrl);
+      .map(validateAndCleanUrl)
+      .filter(Boolean); // Remove null values
     images.push(...validUrls);
   }
   
-  // Deduplicate and ensure HTTPS
-  return [...new Set(images)]
-    .map(url => url.replace(/^http:/, 'https:'))
-    .slice(0, 3); // Limit to 3 images max
+  // Deduplicate
+  return [...new Set(images)].slice(0, 3); // Limit to 3 images max
 }
 
 function processResponse(reply) {
