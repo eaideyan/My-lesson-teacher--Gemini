@@ -309,21 +309,19 @@
         text-align: center;
         border: 1px dashed #cbd5e1;
         margin: 0.5rem 0;
+        font-size: 0.9rem;
       `;
       
-      // Create a more informative error message
-      const title = document.createElement('div');
-      title.style.fontWeight = 'bold';
-      title.style.marginBottom = '0.5rem';
-      title.textContent = 'Visual Aid Not Available';
+      err.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 0.5rem;">
+          Visual Aid Not Available
+        </div>
+        <div style="color: #64748b;">
+          I can describe this concept another way.<br>
+          Would you like me to explain differently?
+        </div>
+      `;
       
-      const message = document.createElement('div');
-      message.style.fontSize = '0.9rem';
-      message.style.color = '#64748b';
-      message.textContent = 'I can describe this concept another way. Would you like me to explain differently?';
-      
-      err.appendChild(title);
-      err.appendChild(message);
       return err;
     }
 
@@ -459,8 +457,8 @@
 
         // Handle images in the visuals sidebar
         if (images && images.length > 0) {
-          const visuals = document.getElementById('visuals');
-          visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
+          const visuals = document.getElementById('visualsContent');
+          visuals.innerHTML = '';
           
           const imgContainer = document.createElement('div');
           imgContainer.style.cssText = `
@@ -471,14 +469,21 @@
           `;
           
           let hasValidImage = false;
+          let errorCount = 0;
           
           for (const url of images) {
             const img = document.createElement('img');
             img.src = url;
             img.loading = 'lazy';
             img.alt = 'Topic visual';
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.3s ease';
+            img.style.cssText = `
+              opacity: 0;
+              transition: opacity 0.3s ease;
+              max-width: 100%;
+              height: auto;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            `;
             
             // Show image smoothly when loaded
             img.onload = () => {
@@ -486,21 +491,33 @@
               hasValidImage = true;
             };
             
-            // Enhanced error handling
-            img.onerror = () => {
+            // Enhanced error handling with multiple retries
+            img.onerror = async () => {
               const retryCount = (img.dataset.retries || 0) * 1 + 1;
               if (retryCount <= 2) {
                 img.dataset.retries = retryCount;
-                // Try with a different protocol
-                const newUrl = url.replace(/^https?:/, window.location.protocol);
-                setTimeout(() => img.src = newUrl, 1000 * retryCount);
-              } else {
-                if (!hasValidImage) {
-                  img.replaceWith(createErrorElement());
-                } else {
-                  img.remove(); // Remove if we have other valid images
+                // Try with different protocols and URL variations
+                const variations = [
+                  url.replace(/^https?:/, window.location.protocol),
+                  url.replace(/^http:/, 'https:'),
+                  url.replace(/^https:/, 'http:')
+                ];
+                
+                for (const newUrl of variations) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  if (img.parentNode) { // Check if img is still in DOM
+                    img.src = newUrl;
+                    return; // Exit after trying new URL
+                  }
                 }
               }
+              
+              errorCount++;
+              if (errorCount === images.length) {
+                // All images failed
+                imgContainer.appendChild(createErrorElement());
+              }
+              img.remove();
             };
             
             imgContainer.appendChild(img);
