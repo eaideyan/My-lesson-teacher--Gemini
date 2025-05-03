@@ -546,38 +546,31 @@ function handleAI(reply) {
 
     /* ---------- INIT ---------- */
 function initChat() {
-  // 1) Reset state
-  history    = [];
-  student    = '';
+  // Reset all state
+  history = [];
+  student = '';
   totalNodes = 0;
 
-  // 2) Clear UI
+  // Clear UI
   chatBox.innerHTML = '';
-  document.getElementById('visuals').innerHTML       = '<h3>🔍 Topic visuals</h3>';
-  document.getElementById('aboutMrE').style.display  = 'block';
+  document.getElementById('aboutMrE').style.display = 'block';
   document.getElementById('knowledgeHeader').style.display = 'none';
-  document.getElementById('treeContents').innerHTML  = '';
-
-  // 3) Clear & show progress bar
-  const pv = document.getElementById('progressVisual');
-  const pf = document.getElementById('progressFeedback');
-  pv.textContent   = '';
-  pf.textContent   = '';
-  pv.style.display = 'block';
-  pf.style.display = 'block';
-
-  // 4) Restore any saved tree/progress
-  restoreTreeState();
-
-  // 5) SHOW SCAFFOLD (optional) **AND THEN** the welcome
+  document.getElementById('treeContents').innerHTML = '';
+  document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
+  
+  // Reset progress bar
+  document.getElementById('progressVisual').textContent = '';
+  document.getElementById('progressFeedback').textContent = '';
+  
+  // Show stub tree immediately
   document.getElementById('knowledgeHeader').style.display = 'block';
   document.getElementById('treeContents').innerHTML = `
-    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
+    <ol style="opacity:0.5; list-style-position: inside; padding-left:1rem">
       <li>…waiting for today’s plan…</li>
     </ol>
   `;
 
-  // 6) Finally, push the welcome into the chat
+  // Finally, send welcome once
   setTimeout(() => {
     addMsg(
       "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
@@ -585,7 +578,6 @@ function initChat() {
     );
   }, 100);
 }
-document.addEventListener('DOMContentLoaded', initChat);
 
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
