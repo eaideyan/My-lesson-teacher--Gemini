@@ -6,51 +6,49 @@ engaged-learning.com Keep track of what the student has learned; later on, ask r
 Your mission is to help ONE student at a time master any topic 3× faster through a tight assess‑teach‑retest loop grounded in Bloom's Taxonomy, Zone‑of‑Proximal‑Development (ZPD), and Nigerian cultural relevance.
 Speak like a brilliant Nigerian teacher — clear, joyful, supportive; sprinkle everyday Nigerian examples and growth‑mindset praise. Never sound robotic.
 
-When including images, use ONLY these free educational sources:
+For visual aids, use these approaches in order of preference:
 
-1. OpenStax (Creative Commons Licensed):
-   https://openstax.org/apps/archive/...
-   - All content is CC-BY licensed
-   - Free for educational use
-   - High-quality textbook images
+1. ASCII/Text Art for Simple Concepts:
+   Example for addition (2 + 1 = 3):
+   🔵🔵 + 🔵 = 🔵🔵🔵
+   
+   Example for grouping:
+   (●●●) + (●●) = ●●●●●
 
-2. PhET Interactive Simulations (Free for Educational Use):
-   https://phet.colorado.edu/sims/html/...
-   - Free for teaching and learning
-   - Interactive simulations
-   - Available offline
+2. Emoji-Based Visuals:
+   For fruits: 🍎🍎 + 🍎 = 🍎🍎🍎
+   For money: 💰💰 + 💰 = 💰💰💰
+   
+3. Simple Text Descriptions:
+   "Draw 2 circles, then draw 1 more circle below them"
+   "Make 3 marks on your paper, then add 2 more marks"
 
-3. CK-12 (Free License):
-   https://www.ck12.org/media/...
-   - Free to use and modify
-   - Curriculum-aligned content
-   - Multiple formats available
-
-4. Khan Academy (CC-BY-NC-SA):
-   https://cdn.kastatic.org/...
-   - Free for non-commercial use
-   - Classroom-ready content
-   - Practice exercises included
-
-Image Usage Rules:
-1. ONLY use images from these approved sources
-2. Verify the URL leads directly to an image file (.jpg, .png, .gif)
-3. Include proper attribution in the Alt text
-4. Do not modify or crop the images
-5. Use images that match the student's grade level
+Visual Aid Rules:
+1. Keep visuals extremely simple
+2. Use basic shapes or common emojis
+3. Align objects for clear counting
+4. Space elements well for readability
+5. Include step-by-step drawing instructions
 
 Example format:
-Image: [URL to free educational image]
-Alt text: [Description] - Source: [Platform name]
+Visual Aid:
+🔵🔵 (first number)
++ 🔵 (number to add)
+= 🔵🔵🔵 (total)
 
-DO NOT use:
-- No commercial image sites
-- No stock photo sites
-- No social media images
-- No image hosting services
-- No sources requiring paid licenses
+For complex concepts:
+1. Break into smaller visual steps
+2. Use arrows (→) to show changes
+3. Add simple labels when needed
+4. Guide student to draw along
 
-If no suitable free image is available, explain the concept using text and diagrams that can be drawn by the student.
+If student asks for an image:
+1. Provide emoji/text visual first
+2. If unclear, guide student to draw
+3. Use real objects around them
+4. Make it interactive with finger counting
+
+Remember: Simple, clear visuals are better than complex images.
 
 ────────────────────
 1.  SESSION START
@@ -157,71 +155,26 @@ Image: https://…example.png
 Video: https://www.youtube.com/watch?v=abc123XYZ
 `.trim();
 
-// Add helper functions for processing responses
+// Update image extraction to handle emoji/text art
 function extractImages(text) {
-  const images = [];
-  const validDomains = [
-    'openstax.org',
-    'phet.colorado.edu',
-    'www.ck12.org',
-    'cdn.kastatic.org'
-  ];
+  const visualAids = [];
   
-  // Helper to validate and clean URLs
-  const validateAndCleanUrl = (url) => {
-    try {
-      // Basic URL cleanup
-      url = url.trim()
-        .replace(/^https?:/, 'https:') // Force HTTPS
-        .replace(/%20/g, '-'); // Replace spaces with hyphens
-      
-      const urlObj = new URL(url);
-      
-      // Validate domain
-      if (!validDomains.some(domain => urlObj.hostname.toLowerCase() === domain)) {
-        console.log('Invalid domain:', urlObj.hostname);
-        return null;
-      }
-      
-      // Validate file extension
-      if (!/\.(jpg|jpeg|png|gif|svg)$/i.test(urlObj.pathname)) {
-        console.log('Invalid file extension:', urlObj.pathname);
-        return null;
-      }
-      
-      return url;
-    } catch (e) {
-      console.error('Invalid URL:', url, e);
-      return null;
-    }
-  };
-
-  // Extract URLs and alt text from text
-  const imagePattern = /Image:\s*(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|svg))(?:\s*Alt text:\s*([^\n]+))?/gi;
-  const matches = [...text.matchAll(imagePattern)];
+  // Look for Visual Aid: blocks
+  const visualPattern = /Visual Aid:\s*([\s\S]+?)(?=\n\n|$)/gi;
+  const matches = [...text.matchAll(visualPattern)];
   
   for (const match of matches) {
-    const [_, url, altText] = match;
-    const validUrl = validateAndCleanUrl(url);
-    if (validUrl) {
-      // Extract source from alt text or URL
-      const source = altText?.match(/Source:\s*([^-]+)/) || 
-                    validUrl.match(/^https?:\/\/(?:www\.)?([^/]+)/);
-      const sourceName = source ? source[1].trim() : 'Educational source';
-      
-      images.push({
-        url: validUrl,
-        alt: altText || `Educational visual aid - Source: ${sourceName}`
-      });
-    }
+    const [_, visualContent] = match;
+    visualAids.push({
+      content: visualContent.trim(),
+      type: 'text-visual'
+    });
   }
   
-  // Deduplicate and limit
-  return [...new Set(images.map(img => JSON.stringify(img)))]
-    .map(str => JSON.parse(str))
-    .slice(0, 2); // Limit to 2 images max
+  return visualAids;
 }
 
+// Update message processing to handle text-based visuals
 function processResponse(reply) {
   // Extract progress information
   const progressMatch = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\s*mastered!\)/);
@@ -231,8 +184,8 @@ function processResponse(reply) {
     total: parseInt(progressMatch[3])
   } : null;
 
-  // Extract images
-  const images = extractImages(reply);
+  // Extract visual aids
+  const visuals = extractImages(reply);
 
   // Extract knowledge tree
   const treeMatch = reply.match(/Knowledge Tree for [^:]+:([\s\S]+?)(?=\n\n|$)/);
@@ -241,7 +194,7 @@ function processResponse(reply) {
   return {
     message: reply,
     progress,
-    images,
+    visuals,
     knowledgeTree
   };
 }
@@ -343,10 +296,10 @@ export default async function handler(req, res) {
         const processed = processResponse(reply);
         
         // Log image extraction results
-        if (processed.images && processed.images.length > 0) {
-          console.log('Extracted images:', processed.images);
+        if (processed.visuals && processed.visuals.length > 0) {
+          console.log('Extracted visuals:', processed.visuals);
         } else {
-          console.log('No images found in response');
+          console.log('No visuals found in response');
         }
         
         return res.status(200).json(processed);
