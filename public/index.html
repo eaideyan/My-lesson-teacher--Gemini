@@ -466,17 +466,7 @@
         // Handle images in the visuals sidebar
         if (images && images.length > 0) {
           const visuals = document.getElementById('visuals');
-          const visualsContent = document.getElementById('visualsContent');
-          
-          if (!visualsContent) {
-            // Create visualsContent if it doesn't exist
-            const newContent = document.createElement('div');
-            newContent.id = 'visualsContent';
-            visuals.appendChild(newContent);
-          }
-          
-          const container = document.getElementById('visualsContent');
-          container.innerHTML = '';
+          visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
           
           const imgContainer = document.createElement('div');
           imgContainer.style.cssText = `
@@ -491,8 +481,26 @@
           
           for (const url of images) {
             console.log('Attempting to load image:', url);
+            
+            // Clean and validate the URL
+            let cleanUrl = url.trim();
+            if (!cleanUrl.startsWith('http')) {
+              cleanUrl = 'https://' + cleanUrl;
+            }
+            
+            // Ensure proper URL encoding for special characters
+            try {
+              const urlObj = new URL(cleanUrl);
+              cleanUrl = urlObj.toString();
+            } catch (e) {
+              console.error('Invalid URL:', cleanUrl);
+              errorCount++;
+              continue;
+            }
+            
             const img = document.createElement('img');
-            img.src = url;
+            img.crossOrigin = "anonymous"; // Try to handle CORS issues
+            img.referrerPolicy = "no-referrer"; // Handle referrer policy issues
             img.loading = 'lazy';
             img.alt = 'Topic visual';
             img.style.cssText = `
@@ -506,31 +514,39 @@
             
             // Show image smoothly when loaded
             img.onload = () => {
-              console.log('Image loaded successfully:', url);
+              console.log('Image loaded successfully:', cleanUrl);
               img.style.opacity = '1';
               hasValidImage = true;
             };
             
             // Enhanced error handling with multiple retries
             img.onerror = async () => {
-              console.error('Failed to load image:', url);
+              console.error('Failed to load image:', cleanUrl);
               const retryCount = (img.dataset.retries || 0) * 1 + 1;
-              if (retryCount <= 2) {
+              
+              if (retryCount <= 3) {
                 img.dataset.retries = retryCount;
-                console.log(`Retry attempt ${retryCount} for image:`, url);
-                // Try with different protocols and URL variations
+                console.log(`Retry attempt ${retryCount} for image:`, cleanUrl);
+                
+                // Try different URL variations
                 const variations = [
-                  url.replace(/^https?:/, window.location.protocol),
-                  url.replace(/^http:/, 'https:'),
-                  url.replace(/^https:/, 'http:')
+                  cleanUrl,
+                  cleanUrl.replace(/^https:/, 'http:'),
+                  cleanUrl.replace(/^http:/, 'https:'),
+                  cleanUrl.replace('/thumb/', '/'),
+                  cleanUrl.replace(/\/\d+px-/, '/') // Remove size constraint
                 ];
                 
                 for (const newUrl of variations) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  if (img.parentNode) { // Check if img is still in DOM
+                  if (!img.parentNode) break; // Stop if image was removed
+                  
+                  try {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     console.log('Trying variation:', newUrl);
                     img.src = newUrl;
                     return; // Exit after trying new URL
+                  } catch (e) {
+                    console.error('Error with URL variation:', e);
                   }
                 }
               }
@@ -545,10 +561,19 @@
               img.remove();
             };
             
+            // Set the source last
+            img.src = cleanUrl;
             imgContainer.appendChild(img);
           }
           
-          container.appendChild(imgContainer);
+          visuals.appendChild(imgContainer);
+        } else {
+          // No images to display
+          const visuals = document.getElementById('visuals');
+          visuals.innerHTML = `
+            <h3>🔍 Topic visuals</h3>
+            ${createErrorElement().outerHTML}
+          `;
         }
 
       } catch (error) {
