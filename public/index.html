@@ -520,11 +520,18 @@ function cleanupReply(reply) {
 
     /* ---------- SEND ---------- */
     async function send(msg) {
-      if (!student && /my name is (\w+)/i.test(msg)) {
-        student = msg.match(/my name is (\w+)/i)[1];
-      }
-
-      history.push({ role: 'user', content: msg });
++  // ─── 1a) Capture student’s name ───────────────────────────────
++  if (!student && /my name is (\w+)/i.test(msg)) {
++    student = msg.match(/my name is (\w+)/i)[1];
++  }
++
++  // ─── 1b) Capture student’s grade (Primary X) ──────────────────
++  if (!window.studentGrade) {
++    const gm = msg.match(/primary\s*([1-9])/i);
++    window.studentGrade = gm ? parseInt(gm[1], 10) : null;
++  }
++
+  history.push({ role: 'user', content: msg });
       addMsg(msg, 'user');
 
       thinking = addMsg('💭 Uncle E. is thinking...', 'assistant');
@@ -559,12 +566,14 @@ function initChat() {
   student    = '';
   totalNodes = 0;
 
-  // 2) Clear out the UI
-  chatBox.innerHTML = '';
-  document.getElementById('visuals').innerHTML       = '<h3>🔍 Topic visuals</h3>';
-  document.getElementById('aboutMrE').style.display  = 'block';
-  document.getElementById('knowledgeHeader').style.display = 'none';
-  document.getElementById('treeContents').innerHTML  = '';
++  // ─── 2) Show empty “waiting for today’s plan…” tree ────────────
++  document.getElementById('knowledgeHeader').style.display = 'block';
++  document.getElementById('treeContents').innerHTML = `
++    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
++      <li>…waiting for today’s plan…</li>
++    </ol>
++  `;
++  // ──────────────────────────────────────────────────────────────
 
   // 3) Clear & un-hide progress bar + feedback
   const pv = document.getElementById('progressVisual');
@@ -576,41 +585,6 @@ function initChat() {
 
   // 4) Restore any saved tree/progress state
   restoreTreeState();
-
-  // 5) Show the welcome prompt
-  setTimeout(() => {
-    addMsg(
-      "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
-      'assistant'
-    );
-  }, 100);
-}
-
-// Re-attach on page load
-document.addEventListener('DOMContentLoaded', initChat);
-  // ─── NEW: show an empty tree scaffold immediately ──────────────────────
-  document.getElementById('knowledgeHeader').style.display = 'block';
-  document.getElementById('treeContents').innerHTML = `
-    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
-      <li>…waiting for today’s plan…</li>
-    </ol>
-  `;
-
-  // 5) Show the welcome prompt
-  setTimeout(() => {
-    addMsg(
-      "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
-      'assistant'
-    );
-  }, 100);
-}
-  // ─── NEW: show an empty tree scaffold immediately ──────────────────────
-  document.getElementById('knowledgeHeader').style.display = 'block';
-  document.getElementById('treeContents').innerHTML = `
-    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
-      <li>…waiting for today’s plan…</li>
-    </ol>
-  `;
 
   // 5) Show the welcome prompt
   setTimeout(() => {
