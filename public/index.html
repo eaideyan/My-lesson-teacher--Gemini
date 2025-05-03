@@ -385,73 +385,58 @@ function setTree(txt) {
 
   // ─── OVERWRITE this entire function ─────────────────────────────────────────
 function handleAI(reply) {
-  // capture student name/topic for dynamic messages
-  const who = student || 'friend';
+  // Capture dynamic placeholders
+  const who  = student || 'friend';
   const what = currentTopic || 'this topic';
 
-  // 1) Reset visuals pane
+  // 1) Reset visuals
   const visuals = document.getElementById('visuals');
   visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
 
-  // 2) Extract & render the Knowledge Tree, pull out topic title
+  // 2) Extract & render the Knowledge Tree
   const treeText = extractTree(reply);
   if (treeText) {
-    const titleMatch = reply.match(
-      /^Knowledge Tree for\s+(.+?)\s*\((?:[^)]+)\):/mi
-    );
-    if (titleMatch) {
-      currentTopic = titleMatch[1].trim();
-    }
+    const titleMatch = reply.match(/^Knowledge Tree for\s+(.+?)\s*\(/mi);
+    if (titleMatch) currentTopic = titleMatch[1];
     const nodesOnly = treeText
-      .split('\n')
-      .filter(line => /^\d+\./.test(line))
-      .join('\n');
-    setTree(nodesOnly);
+      .split('\n').filter(l => /^\d+\./.test(l)).join('\n');
+    setTree(nodesOnly);  // will handle grade ≤3 vs ≥4
   }
 
-  // 3) Clean up the LLM reply for chat bubble
+  // 3) Clean up reply
   let clean = cleanupReply(reply);
 
-  // 4) Extract images: Markdown, "Image:", and bare URLs
+  // 4) Extract images: Markdown, "Image:", bare URLs
   const images = [];
-  // a) Markdown ![alt](URL)
-  clean = clean.replace(
-    /!\[.*?\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
-    (_, url) => { images.push(url); return ''; }
-  );
-  // b) "Image: URL"
-  clean = clean.replace(
-    /Image:\s*(https?:\/\/[^\s]+)/gi,
-    (_, url) => { images.push(url); return ''; }
-  );
-  // c) bare URLs on their own line
-  clean = clean.replace(
-    /^\s*(https?:\/\/\S+\.(?:png|jpe?g|gif|svg))\s*$/gim,
-    (_, url) => { images.push(url.trim()); return ''; }
-  );
+  clean = clean
+    // a) ![alt](URL)
+    .replace(/!\[.*?\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
+             (_, url) => (images.push(url), ''))
+    // b) Image: URL
+    .replace(/Image:\s*(https?:\/\/\S+)/gi,
+             (_, url) => (images.push(url), ''))
+    // c) bare URL on its own line
+    .replace(/^\s*(https?:\/\/\S+\.(?:png|gif|jpg|svg))\s*$/gim,
+             (_, url) => (images.push(url.trim()), ''));
 
   // 5) Extract YouTube IDs
   const youtube = [];
   clean = clean.replace(
     /(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi,
-    (_, id) => { youtube.push(id); return ''; }
+    (_, id) => (youtube.push(id), '')
   ).trim();
 
-  // 6) Render assistant bubble & optional TTS
+  // 6) Render bubble + optional speech
   addMsg(clean, 'assistant');
   speak(clean);
 
-  // 7) Show the first image or video
+  // 7) Put first image or video into the visuals pane
   if (images.length) {
     const img = document.createElement('img');
     img.src = images[0];
     img.style.cssText = `
-      width: 100%;
-      max-height: 300px;
-      object-fit: contain;
-      margin: 1rem 0;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      width:100%; max-height:300px; object-fit:contain;
+      margin:1rem 0; border-radius:8px; border:1px solid #e5e7eb;
     `;
     img.onerror = () => img.remove();
     visuals.appendChild(img);
@@ -460,47 +445,43 @@ function handleAI(reply) {
     const iframe = document.createElement('iframe');
     iframe.src = `https://www.youtube.com/embed/${youtube[0]}`;
     iframe.style.cssText = `
-      width: 100%;
-      aspect-ratio: 16/9;
-      margin: 1rem 0;
-      border: none;
-      border-radius: 8px;
+      width:100%; aspect-ratio:16/9; margin:1rem 0;
+      border:none; border-radius:8px;
     `;
     visuals.appendChild(iframe);
   }
 
-  // 8) Parse Progress and sync sidebar
-  const prog = reply.match(
-    /🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i
-  );
+  // 8) Parse & sync progress
+  const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
   if (prog) {
-    const done  = parseInt(prog[2], 10);
-    const total = parseInt(prog[3], 10);
+    const done  = +prog[2];
+    const total = +prog[3];
     totalNodes = total;
     updateProgress(done, total);
   }
 
-  // 9) Celebrate mastery & inject fallback summary + final progress
+  // 9) Inject final summary + progress bar snapshot
   const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
   if (didMaster) {
     confetti();
     updateProgress(totalNodes, totalNodes);
 
   } else if (prog && +prog[2] === +prog[3]) {
-    // model forgot its own summary → we inject one
+    // LLM forgot its own summary
     confetti();
     updateProgress(totalNodes, totalNodes);
 
-    const summary =
+    const summary = 
       `🎉 You MASTERED ${what}, ${who}! Congratulations! 👏👏👏\n` +
       `Ready for a bonus challenge or a new topic?`;
     addMsg(summary, 'assistant');
 
-    // snapshot the final progress bar text
+    // also echo the final progress bar into the chat
     const pvText = document.getElementById('progressVisual').textContent;
     addMsg(pvText, 'assistant');
   }
 }
+
 
 
     /* ---------- SEND ---------- */
