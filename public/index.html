@@ -504,17 +504,17 @@ function setTree(txt) {
 
     /* ---------- SEND ---------- */
     async function send(msg) {
-+  // ─── 1a) Capture student’s name ───────────────────────────────
-+  if (!student && /my name is (\w+)/i.test(msg)) {
-+    student = msg.match(/my name is (\w+)/i)[1];
-+  }
-+
-+  // ─── 1b) Capture student’s grade (Primary X) ──────────────────
-+  if (!window.studentGrade) {
-+    const gm = msg.match(/primary\s*([1-9])/i);
-+    window.studentGrade = gm ? parseInt(gm[1], 10) : null;
-+  }
-+
+ // ─── 1a) Capture student’s name ───────────────────────────────
+  if (!student && /my name is (\w+)/i.test(msg)) {
+    student = msg.match(/my name is (\w+)/i)[1];
+  }
+
+  // ─── 1b) Capture student’s grade (Primary X) ──────────────────
+  if (!window.studentGrade) {
+    const gm = msg.match(/primary\s*([1-9])/i);
+    window.studentGrade = gm ? parseInt(gm[1], 10) : null;
+  }
+
   history.push({ role: 'user', content: msg });
       addMsg(msg, 'user');
 
