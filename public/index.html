@@ -381,94 +381,105 @@ function cleanupReply(reply) {
 }
 
 // ── OVERWRITE your old handleAI with this ────────────────────────────────
+let currentTopic = '';
+
 function handleAI(reply) {
-  // 1) Reset visuals
+  // ─── 1) Reset visuals pane
   const visuals = document.getElementById('visuals');
   visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
 
-  // 2) Sidebar: extract & render tree
-  const treeText = extractTree(reply);
-  if (treeText) {
-    const nodesOnly = treeText
-      .split('\n')
-      .filter(line => /^\d+\./.test(line))
-      .join('\n');
-    setTree(nodesOnly);
+  // ─── 2) Extract and render the Knowledge Tree
+  //     Also capture the topic name for later summaries.
+  const treeBlock = reply.match(/^Knowledge Tree for\s+(.+?)\s*\(([^)]+)\):/im);
+  if (treeBlock) {
+    currentTopic = treeBlock[1].trim();           // e.g. “Addition”
+    const treeText = extractTree(reply);
+    if (treeText) setTree(treeText);
   }
 
-  // 3) Clean up chat text
+  // ─── 3) Clean the chat text of any numbered lists or bloom-labels
   let clean = cleanupReply(reply);
 
-// 4) Extract images (Markdown + plain)
-const images = [];
+  // ─── 4) Extract images (Markdown + “Image: URL”)
+  const images = [];
+  // a) Markdown-style: ![alt](URL)
+  clean = clean.replace(
+    /!\[.*?\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
+    (_, url) => (images.push(url), '')
+  );
+  // b) Plain “Image: URL” lines
+  clean = clean.replace(
+    /Image:\s*(https?:\/\/[^\s)]+)/gi,
+    (_, url) => (images.push(url), '')
+  );
 
-// a) Markdown-style images: ![alt](URL)
-clean = clean.replace(
-  /!\[.*?\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
-  (_, url) => {
-    images.push(url);
-    return '';
-  }
-);
-
-// b) Plain “Image: URL” lines
-clean = clean.replace(
-  /Image:\s*(https?:\/\/[^\s)]+)/gi,
-  (_, url) => {
-    images.push(url);
-    return '';
-  }
-);
-
-  // 5) Extract YouTube
+  // ─── 5) Extract YouTube IDs
   const youtube = [];
   clean = clean.replace(
     /(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/gi,
     (_, id) => (youtube.push(id), '')
   ).trim();
 
-  // 6) Render chat bubble & optional TTS
+  // ─── 6) Render the assistant bubble & optionally speak
   addMsg(clean, 'assistant');
   speak(clean);
 
-  // 7) Show first image or video
+  // ─── 7) Show first image or YouTube video in the visuals pane
   if (images.length) {
     const img = document.createElement('img');
     img.src = images[0];
-    img.style = 'width:100%; max-height:300px; object-fit:contain; margin:1rem 0;';
+    img.style.cssText = `
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    `;
+    img.onerror = () => img.remove();
     visuals.appendChild(img);
+
   } else if (youtube.length) {
     const iframe = document.createElement('iframe');
     iframe.src = `https://www.youtube.com/embed/${youtube[0]}`;
-    iframe.style = 'width:100%; aspect-ratio:16/9; margin:1rem 0; border:none;';
+    iframe.style.cssText = `
+      width: 100%;
+      aspect-ratio: 16/9;
+      margin: 1rem 0;
+      border: none;
+      border-radius: 8px;
+    `;
     visuals.appendChild(iframe);
   }
 
-  // 8) Progress bar parsing
+  // ─── 8) Parse the model’s Progress line and sync sidebar
   const prog = reply.match(/🧠\s*Progress:\s*([🟢⬜]+)\s*\((\d+)\/(\d+)\)/i);
   if (prog) {
-    const done = +prog[2], total = +prog[3];
+    const done  = parseInt(prog[2], 10),
+          total = parseInt(prog[3], 10);
     totalNodes = total;
     updateProgress(done, totalNodes);
   }
 
-// 9) Celebrate mastery (model‐driven)
-if (/🎉\s*You\s+MASTERED/i.test(reply)) {
-  // Model _did_ give us a summary. Just render it.
-  // (We already did addMsg(clean, 'assistant') above.)
-  confetti();
-  // Sync sidebar one last time:
-  updateProgress(totalNodes, totalNodes);
+  // ─── 9) Celebrate mastery & inject or trust the model’s summary
+  const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
+  if (didMaster) {
+    confetti();
+    // If the model already printed its own “🎉 You MASTERED…” we show nothing more.
+    // But ensure the sidebar is fully green:
+    updateProgress(totalNodes, totalNodes);
+
+  } else if (prog && prog[2] === prog[3]) {
+    // If it hit 5/5 or x/x but didn’t give the summary text, we add a fallback.
+    confetti();
+    const summary = 
+      `🎉 You MASTERED ${currentTopic || 'this topic'}, ${student}! Clap for yourself! 👏👏👏\n` +
+      `Ready for a bonus challenge or a new topic?`;
+    addMsg(summary, 'assistant');
+    // Sidebar is already at 100%.
+  }
 }
-else {
-  // Model never sent a summary → inject a default one **without** overriding any dynamic suggestion
-  confetti();
-  addMsg(
-    `🎉 You MASTERED ${currentTopic}, ${student}! Clap for yourself! 👏👏👏\n` +
-    `Ready for a bonus challenge or a new topic?`, 
-    'assistant'
-  );
-}
+
 
 
     /* ---------- SEND ---------- */
