@@ -338,20 +338,28 @@ function setTree(txt) {
   document.getElementById('knowledgeHeader').style.display = 'block';
   document.getElementById('aboutMrE').style.display = 'none';
 
+  const grade = window.studentGrade || 0;
+
+  if (grade <= 3) {
+    // for Primary 1–3: show only a simple progress bar
+    updateProgress(0, totalNodes);
+    return;
+  }
+
+  // for grade ≥4: full tree
   const itemsHtml = lines.map(l => {
-    // regex to split off the emoji and the student text after the colon
-    const m = l.match(/^[0-9]+\.\s*(🌱|🔁|🌟)\s*[^:]+:\s*(.*)$/);
+    const m = l.match(/^[0-9]+\.\s*(🌱|🔁|🌟)[^:]*:\s*(.*)$/);
     if (m) {
       const [, emoji, text] = m;
       return `<li>${emoji} ${text.trim()}</li>`;
     }
-    // fallback if it didn't match
     return `<li>${l.replace(/^\d+\.\s*/, '')}</li>`;
   }).join('');
 
   document.getElementById('treeContents').innerHTML =
     `<ol style="padding-left:1rem">${itemsHtml}</ol>`;
 
+  // reset the bar to zero mastered
   updateProgress(0, totalNodes);
 }
 
