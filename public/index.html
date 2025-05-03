@@ -302,13 +302,28 @@
     function createErrorElement() {
       const err = document.createElement('div');
       err.style.cssText = `
-        padding: 1rem;
-        background: #fee2e2;
+        padding: 1.5rem;
+        background: #f8fafc;
         border-radius: 8px;
-        color: #991b1b;
+        color: #1e293b;
         text-align: center;
+        border: 1px dashed #cbd5e1;
+        margin: 0.5rem 0;
       `;
-      err.textContent = 'Image could not be loaded';
+      
+      // Create a more informative error message
+      const title = document.createElement('div');
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '0.5rem';
+      title.textContent = 'Visual Aid Not Available';
+      
+      const message = document.createElement('div');
+      message.style.fontSize = '0.9rem';
+      message.style.color = '#64748b';
+      message.textContent = 'I can describe this concept another way. Would you like me to explain differently?';
+      
+      err.appendChild(title);
+      err.appendChild(message);
       return err;
     }
 
@@ -455,24 +470,41 @@
             padding: 0.5rem;
           `;
           
-          images.forEach(url => {
+          let hasValidImage = false;
+          
+          for (const url of images) {
             const img = document.createElement('img');
             img.src = url;
             img.loading = 'lazy';
             img.alt = 'Topic visual';
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
             
+            // Show image smoothly when loaded
+            img.onload = () => {
+              img.style.opacity = '1';
+              hasValidImage = true;
+            };
+            
+            // Enhanced error handling
             img.onerror = () => {
               const retryCount = (img.dataset.retries || 0) * 1 + 1;
-              if (retryCount <= 3) {
+              if (retryCount <= 2) {
                 img.dataset.retries = retryCount;
-                setTimeout(() => img.src = url, 1000 * retryCount);
+                // Try with a different protocol
+                const newUrl = url.replace(/^https?:/, window.location.protocol);
+                setTimeout(() => img.src = newUrl, 1000 * retryCount);
               } else {
-                img.replaceWith(createErrorElement());
+                if (!hasValidImage) {
+                  img.replaceWith(createErrorElement());
+                } else {
+                  img.remove(); // Remove if we have other valid images
+                }
               }
             };
             
             imgContainer.appendChild(img);
-          });
+          }
           
           visuals.appendChild(imgContainer);
         }
@@ -574,4 +606,4 @@
     }
   </script>
 </body>
-</html>
+</html> 
