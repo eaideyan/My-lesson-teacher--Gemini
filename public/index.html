@@ -494,25 +494,26 @@ clean = clean.replace(
 // 9) Celebrate mastery & summary injection
 const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
 if (didMaster) {
+  // model already gave its 🎉 summary
   confetti();
   updateProgress(totalNodes, totalNodes);
 
 } else if (prog && +prog[2] === +prog[3]) {
-  // we hit x/x but model forgot the summary text
+  // we hit x/x but model forgot to summarize
   confetti();
   updateProgress(totalNodes, totalNodes);
 
-  // bullet-proof defaults
+  // bullet-proof defaults so we never get “undefined”
   const who  = student      || 'friend';
   const what = currentTopic || 'this topic';
 
-  // clean, guaranteed fallback summary
+  // guaranteed fallback summary
   const summary =
     `🎉 You MASTERED ${what}, ${who}! Congratulations! 👏👏👏\n` +
     `Ready for a bonus challenge or a new topic?`;
   addMsg(summary, 'assistant');
 
-  // echo the final progress bar so it's crystal clear
+  // echo the sidebar progress as its own bubble
   const pvText = document.getElementById('progressVisual').textContent;
   addMsg(pvText, 'assistant');
 }
