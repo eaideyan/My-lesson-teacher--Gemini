@@ -399,32 +399,40 @@
     }
 
     async function send(msg) {
-      // ─── 1a) Capture student's name ───────────────────────────────
-      if (!student && /my name is (\w+)/i.test(msg)) {
-        student = msg.match(/my name is (\w+)/i)[1];
-      }
-
-      // ─── 1b) Capture student's grade (Primary X) ──────────────────
-      if (!window.studentGrade) {
-        const gm = msg.match(/primary\s*([1-9])/i);
-        window.studentGrade = gm ? parseInt(gm[1], 10) : null;
-      }
-
-      history.push({ role: 'user', content: msg });
-      addMsg(msg, 'user');
-
-      thinking = addMsg('💭 Uncle E. is thinking...', 'assistant');
-
       try {
+        // ─── 1a) Capture student's name ───────────────────────────────
+        if (!student && /my name is (\w+)/i.test(msg)) {
+          student = msg.match(/my name is (\w+)/i)[1];
+        }
+
+        // ─── 1b) Capture student's grade (Primary X) ──────────────────
+        if (!window.studentGrade) {
+          const gm = msg.match(/primary\s*([1-9])/i);
+          window.studentGrade = gm ? parseInt(gm[1], 10) : null;
+        }
+
+        history.push({ role: 'user', content: msg });
+        addMsg(msg, 'user');
+
+        thinking = addMsg('💭 Uncle E. is thinking...', 'assistant');
+
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ conversation: history })
         });
         
-        if (!res.ok) throw new Error(`API error ${res.status}`);
-        
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch (e) {
+          throw new Error('Failed to parse response from server');
+        }
+
+        if (!res.ok) {
+          throw new Error(data.message || `Server error: ${res.status}`);
+        }
+
         if (thinking) { thinking.remove(); thinking = null; }
 
         // Handle the enhanced response format
@@ -457,8 +465,18 @@
 
         // Handle images in the visuals sidebar
         if (images && images.length > 0) {
-          const visuals = document.getElementById('visualsContent');
-          visuals.innerHTML = '';
+          const visuals = document.getElementById('visuals');
+          const visualsContent = document.getElementById('visualsContent');
+          
+          if (!visualsContent) {
+            // Create visualsContent if it doesn't exist
+            const newContent = document.createElement('div');
+            newContent.id = 'visualsContent';
+            visuals.appendChild(newContent);
+          }
+          
+          const container = document.getElementById('visualsContent');
+          container.innerHTML = '';
           
           const imgContainer = document.createElement('div');
           imgContainer.style.cssText = `
@@ -472,6 +490,7 @@
           let errorCount = 0;
           
           for (const url of images) {
+            console.log('Attempting to load image:', url);
             const img = document.createElement('img');
             img.src = url;
             img.loading = 'lazy';
@@ -487,15 +506,18 @@
             
             // Show image smoothly when loaded
             img.onload = () => {
+              console.log('Image loaded successfully:', url);
               img.style.opacity = '1';
               hasValidImage = true;
             };
             
             // Enhanced error handling with multiple retries
             img.onerror = async () => {
+              console.error('Failed to load image:', url);
               const retryCount = (img.dataset.retries || 0) * 1 + 1;
               if (retryCount <= 2) {
                 img.dataset.retries = retryCount;
+                console.log(`Retry attempt ${retryCount} for image:`, url);
                 // Try with different protocols and URL variations
                 const variations = [
                   url.replace(/^https?:/, window.location.protocol),
@@ -506,6 +528,7 @@
                 for (const newUrl of variations) {
                   await new Promise(resolve => setTimeout(resolve, 1000));
                   if (img.parentNode) { // Check if img is still in DOM
+                    console.log('Trying variation:', newUrl);
                     img.src = newUrl;
                     return; // Exit after trying new URL
                   }
@@ -513,9 +536,11 @@
               }
               
               errorCount++;
+              console.log(`Image error count: ${errorCount}/${images.length}`);
               if (errorCount === images.length) {
                 // All images failed
-                imgContainer.appendChild(createErrorElement());
+                const err = createErrorElement();
+                imgContainer.appendChild(err);
               }
               img.remove();
             };
@@ -523,13 +548,19 @@
             imgContainer.appendChild(img);
           }
           
-          visuals.appendChild(imgContainer);
+          container.appendChild(imgContainer);
         }
 
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in send():', error);
         if (thinking) { thinking.remove(); thinking = null; }
-        addMsg('⚠️ Something went wrong', 'assistant');
+        
+        // Create a more informative error message
+        const errorMsg = error.message.includes('API error') 
+          ? "I'm having trouble thinking right now. Let me try again in a moment." 
+          : "I couldn't process that properly. Could you try again?";
+        
+        addMsg(`⚠️ ${errorMsg}`, 'assistant');
       }
     }
 
