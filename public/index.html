@@ -429,6 +429,14 @@ function setTree(txt) {
         return '';
       }
     );
+// c) Bare image URLs on a line by themselves
+clean = clean.replace(
+  /^\s*(https?:\/\/\S+\.(?:png|jpe?g|gif|svg))\s*$/gim,
+  (_, url) => {
+    images.push(url.trim());
+    return '';
+  }
+);
 
     // 5) Extract YouTube IDs
     const youtube = [];
@@ -483,24 +491,31 @@ function setTree(txt) {
       updateProgress(done, totalNodes);
     }
 
-    // 9) Celebrate mastery & summary injection
-    const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
-    if (didMaster) {
-      // model gave its own 🎉 summary
-      confetti();
-      updateProgress(totalNodes, totalNodes);
+// 9) Celebrate mastery & summary injection
+const didMaster = /🎉\s*You\s+MASTERED/i.test(reply);
+if (didMaster) {
+  confetti();
+  updateProgress(totalNodes, totalNodes);
 
-    } else if (prog && +prog[2] === +prog[3]) {
-      // we hit x/x but model forgot the summary text
-      confetti();
-      updateProgress(totalNodes, totalNodes);
+} else if (prog && +prog[2] === +prog[3]) {
+  // we hit x/x but model forgot the summary text
+  confetti();
+  updateProgress(totalNodes, totalNodes);
 
-      const summary =
-        `🎉 You MASTERED ${currentTopic || 'this topic'}, ${student}! Congratulations! 👏👏👏\n` +
-        `Ready for a bonus challenge or a new topic?`;
-      addMsg(summary, 'assistant');
-    }
-  }
+  // bullet-proof defaults
+  const who  = student      || 'friend';
+  const what = currentTopic || 'this topic';
+
+  // clean, guaranteed fallback summary
+  const summary =
+    `🎉 You MASTERED ${what}, ${who}! Congratulations! 👏👏👏\n` +
+    `Ready for a bonus challenge or a new topic?`;
+  addMsg(summary, 'assistant');
+
+  // echo the final progress bar so it's crystal clear
+  const pvText = document.getElementById('progressVisual').textContent;
+  addMsg(pvText, 'assistant');
+}
 
     /* ---------- SEND ---------- */
     async function send(msg) {
