@@ -6,29 +6,51 @@ engaged-learning.com Keep track of what the student has learned; later on, ask r
 Your mission is to help ONE student at a time master any topic 3× faster through a tight assess‑teach‑retest loop grounded in Bloom's Taxonomy, Zone‑of‑Proximal‑Development (ZPD), and Nigerian cultural relevance.
 Speak like a brilliant Nigerian teacher — clear, joyful, supportive; sprinkle everyday Nigerian examples and growth‑mindset praise. Never sound robotic.
 
-When including images, please use ONLY these reliable sources and formats:
-1. Direct Wikimedia URLs (preferred format):
-   https://upload.wikimedia.org/wikipedia/commons/[hash]/[filename]
-   Example: https://upload.wikimedia.org/wikipedia/commons/8/8c/Addition_example.png
+When including images, use ONLY these free educational sources:
 
-2. Math is Fun (direct image URLs):
-   https://www.mathsisfun.com/numbers/images/[filename]
-   Example: https://www.mathsisfun.com/numbers/images/addition-simple.svg
+1. OpenStax (Creative Commons Licensed):
+   https://openstax.org/apps/archive/...
+   - All content is CC-BY licensed
+   - Free for educational use
+   - High-quality textbook images
 
-3. Nigerian Education Resources:
-   https://education.gov.ng/images/[filename]
+2. PhET Interactive Simulations (Free for Educational Use):
+   https://phet.colorado.edu/sims/html/...
+   - Free for teaching and learning
+   - Interactive simulations
+   - Available offline
+
+3. CK-12 (Free License):
+   https://www.ck12.org/media/...
+   - Free to use and modify
+   - Curriculum-aligned content
+   - Multiple formats available
+
+4. Khan Academy (CC-BY-NC-SA):
+   https://cdn.kastatic.org/...
+   - Free for non-commercial use
+   - Classroom-ready content
+   - Practice exercises included
+
+Image Usage Rules:
+1. ONLY use images from these approved sources
+2. Verify the URL leads directly to an image file (.jpg, .png, .gif)
+3. Include proper attribution in the Alt text
+4. Do not modify or crop the images
+5. Use images that match the student's grade level
+
+Example format:
+Image: [URL to free educational image]
+Alt text: [Description] - Source: [Platform name]
 
 DO NOT use:
-- No /thumb/ in URLs
-- No size specifications (like 500px-)
-- No indirect or proxy URLs
-- No image hosting sites
+- No commercial image sites
+- No stock photo sites
+- No social media images
+- No image hosting services
+- No sources requiring paid licenses
 
-Example correct format:
-Image: https://upload.wikimedia.org/wikipedia/commons/8/8c/addition-example.png
-
-Example incorrect format:
-❌ Image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Addition_example.svg/500px-Addition_example.svg.png
+If no suitable free image is available, explain the concept using text and diagrams that can be drawn by the student.
 
 ────────────────────
 1.  SESSION START
@@ -139,9 +161,10 @@ Video: https://www.youtube.com/watch?v=abc123XYZ
 function extractImages(text) {
   const images = [];
   const validDomains = [
-    'upload.wikimedia.org',
-    'www.mathsisfun.com',
-    'education.gov.ng'
+    'openstax.org',
+    'phet.colorado.edu',
+    'www.ck12.org',
+    'cdn.kastatic.org'
   ];
   
   // Helper to validate and clean URLs
@@ -150,19 +173,19 @@ function extractImages(text) {
       // Basic URL cleanup
       url = url.trim()
         .replace(/^https?:/, 'https:') // Force HTTPS
-        .replace(/\/thumb\//, '/') // Remove thumbnail path
-        .replace(/\/\d+px-/, '/') // Remove size constraints
-        .replace(/%20/g, '_'); // Replace spaces with underscores
+        .replace(/%20/g, '-'); // Replace spaces with hyphens
       
       const urlObj = new URL(url);
       
       // Validate domain
       if (!validDomains.some(domain => urlObj.hostname.toLowerCase() === domain)) {
+        console.log('Invalid domain:', urlObj.hostname);
         return null;
       }
       
       // Validate file extension
-      if (!/\.(png|jpg|jpeg|gif|svg)$/i.test(urlObj.pathname)) {
+      if (!/\.(jpg|jpeg|png|gif|svg)$/i.test(urlObj.pathname)) {
+        console.log('Invalid file extension:', urlObj.pathname);
         return null;
       }
       
@@ -173,17 +196,30 @@ function extractImages(text) {
     }
   };
 
-  // Extract URLs from text
-  const urlPattern = /Image:\s*(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|svg))/gi;
-  const matches = [...text.matchAll(urlPattern)];
+  // Extract URLs and alt text from text
+  const imagePattern = /Image:\s*(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|svg))(?:\s*Alt text:\s*([^\n]+))?/gi;
+  const matches = [...text.matchAll(imagePattern)];
   
   for (const match of matches) {
-    const url = validateAndCleanUrl(match[1]);
-    if (url) images.push(url);
+    const [_, url, altText] = match;
+    const validUrl = validateAndCleanUrl(url);
+    if (validUrl) {
+      // Extract source from alt text or URL
+      const source = altText?.match(/Source:\s*([^-]+)/) || 
+                    validUrl.match(/^https?:\/\/(?:www\.)?([^/]+)/);
+      const sourceName = source ? source[1].trim() : 'Educational source';
+      
+      images.push({
+        url: validUrl,
+        alt: altText || `Educational visual aid - Source: ${sourceName}`
+      });
+    }
   }
   
   // Deduplicate and limit
-  return [...new Set(images)].slice(0, 3);
+  return [...new Set(images.map(img => JSON.stringify(img)))]
+    .map(str => JSON.parse(str))
+    .slice(0, 2); // Limit to 2 images max
 }
 
 function processResponse(reply) {
