@@ -128,26 +128,56 @@
       min-height: 0; overflow-y: auto; gap: 1rem;
     }
 
-    #visuals img {
-      width: 100%;
-      height: auto;
-      max-height: 300px;
-      object-fit: contain;
+    /* Visual Aid Styling */
+    .visual-aid-box {
+      background: #f8fafc;
       border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      transition: transform 0.3s ease;
-    }
-
-    #visuals img:hover {
-      transform: scale(1.02);
-    }
-
-    #visuals iframe {
-      width: 100%;
-      aspect-ratio: 16/9;
-      border: none;
-      border-radius: 8px;
+      padding: 1rem;
       margin: 0.5rem 0;
+      font-family: monospace;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 1.2rem;
+      text-align: center;
+      border: 1px dashed #e2e8f0;
+      transition: all 0.3s ease;
+    }
+
+    .visual-aid-box:hover {
+      transform: scale(1.02);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .visual-aid-instruction {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #4b5563;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* Special characters */
+    .visual-aid-box .arrow {
+      color: #2563eb;
+      font-weight: bold;
+    }
+
+    .visual-aid-box .emoji {
+      font-size: 1.4rem;
+    }
+
+    .visual-aid-box .label {
+      color: #6b7280;
+      font-size: 0.8rem;
+    }
+
+    /* Remove old image styles */
+    #visuals img,
+    #visuals img:hover,
+    #visuals iframe {
+      display: none;
     }
 
     /* ---------- INPUT BAR ---------- */
@@ -436,7 +466,7 @@
         if (thinking) { thinking.remove(); thinking = null; }
 
         // Handle the enhanced response format
-        const { message, progress, images, knowledgeTree } = data;
+        const { message, progress, visuals, knowledgeTree } = data;
 
         // Update message history with cleaned message
         let cleanMessage = message.replace(/⚠️/g, '');
@@ -463,212 +493,86 @@
         addMsg(cleanMessage, 'assistant');
         speak(cleanMessage);
 
-        // Handle images in the visuals sidebar
-        if (images && images.length > 0) {
-          const visuals = document.getElementById('visuals');
-          visuals.innerHTML = '<h3>🔍 Topic visuals</h3>';
+        // Handle visuals in the sidebar
+        if (visuals && visuals.length > 0) {
+          const visualsDiv = document.getElementById('visuals');
+          visualsDiv.innerHTML = '<h3>🔍 Topic visuals</h3>';
           
-          const imgContainer = document.createElement('div');
-          imgContainer.style.cssText = `
+          const visualContainer = document.createElement('div');
+          visualContainer.style.cssText = `
             display: flex;
             flex-direction: column;
             gap: 1rem;
             padding: 0.5rem;
           `;
           
-          let hasValidImage = false;
-          let errorCount = 0;
-          
-          const loadImage = async (url) => {
-            return new Promise((resolve, reject) => {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-              img.src = url;
-            });
-          };
-          
-          for (const url of images) {
-            console.log('Processing image URL:', url);
+          for (const visual of visuals) {
+            const visualBox = document.createElement('div');
+            visualBox.className = 'visual-aid-box';
             
-            const imgWrapper = document.createElement('div');
-            imgWrapper.style.cssText = `
-              position: relative;
-              min-height: 100px;
-              background: #f8fafc;
-              border-radius: 8px;
-              overflow: hidden;
-            `;
+            // Format the visual content
+            let formattedContent = visual.content
+              .replace(/→|↓|↑/g, match => `<span class="arrow">${match}</span>`)
+              .replace(/(\p{Emoji}+)/gu, match => `<span class="emoji">${match}</span>`)
+              .replace(/\((.*?)\)/g, (_, label) => `<span class="label">(${label})</span>`);
             
-            const loadingIndicator = document.createElement('div');
-            loadingIndicator.style.cssText = `
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              color: #64748b;
-              font-size: 0.9rem;
-            `;
-            loadingIndicator.textContent = 'Loading visual aid...';
-            imgWrapper.appendChild(loadingIndicator);
+            visualBox.innerHTML = formattedContent;
             
-            const img = document.createElement('img');
-            img.style.cssText = `
-              opacity: 0;
-              transition: opacity 0.3s ease;
-              max-width: 100%;
-              height: auto;
-              border-radius: 8px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            `;
-            img.alt = 'Topic visual';
-            img.loading = 'lazy';
-            
-            try {
-              // Clean up URL
-              let cleanUrl = url.trim()
-                .replace(/^https?:/, 'https:') // Force HTTPS
-                .replace(/\/thumb\//, '/') // Remove thumbnail path
-                .replace(/\/\d+px-/, '/') // Remove size constraints
-                .replace(/%20/g, '_'); // Replace spaces with underscores
-              
-              console.log('Attempting to load image:', cleanUrl);
-              
-              // Try to load the image
-              const loadedImg = await loadImage(cleanUrl);
-              img.src = cleanUrl;
-              img.style.opacity = '1';
-              hasValidImage = true;
-              loadingIndicator.remove();
-              imgWrapper.appendChild(img);
-            } catch (error) {
-              console.error('Image load error:', error);
-              errorCount++;
-              
-              if (errorCount === images.length) {
-                // All images failed
-                imgWrapper.innerHTML = '';
-                imgWrapper.appendChild(createErrorElement());
-              } else {
-                // Remove failed image wrapper
-                imgWrapper.remove();
-              }
+            // Add instructions if present
+            if (visual.instructions) {
+              const instructions = document.createElement('div');
+              instructions.className = 'visual-aid-instruction';
+              instructions.textContent = visual.instructions;
+              visualBox.appendChild(instructions);
             }
             
-            imgContainer.appendChild(imgWrapper);
+            visualContainer.appendChild(visualBox);
           }
           
-          visuals.appendChild(imgContainer);
+          visualsDiv.appendChild(visualContainer);
         } else {
-          // No images to display
-          const visuals = document.getElementById('visuals');
-          visuals.innerHTML = `
+          // No visuals to display
+          const visualsDiv = document.getElementById('visuals');
+          visualsDiv.innerHTML = `
             <h3>🔍 Topic visuals</h3>
-            ${createErrorElement().outerHTML}
+            <div class="visual-aid-box">
+              Let's practice drawing this!<br>
+              I can guide you step by step.
+            </div>
           `;
         }
-
       } catch (error) {
-        console.error('Error in send():', error);
-        if (thinking) { thinking.remove(); thinking = null; }
-        
-        // Create a more informative error message
-        const errorMsg = error.message.includes('API error') 
-          ? "I'm having trouble thinking right now. Let me try again in a moment." 
-          : "I couldn't process that properly. Could you try again?";
-        
-        addMsg(`⚠️ ${errorMsg}`, 'assistant');
+        console.error('Error in send function:', error);
       }
     }
 
-    /* ---------- INIT ---------- */
-    function initChat() {
-      // Reset all state
-      history = [];
-      student = '';
-      totalNodes = 0;
-
-      // Clear UI
-      chatBox.innerHTML = '';
-      document.getElementById('aboutMrE').style.display = 'block';
-      document.getElementById('knowledgeHeader').style.display = 'none';
-      document.getElementById('treeContents').innerHTML = '';
-      document.getElementById('visuals').innerHTML = '<h3>🔍 Topic visuals</h3>';
-      
-      // Reset progress bar
-      document.getElementById('progressVisual').textContent = '';
-      document.getElementById('progressFeedback').textContent = '';
-      
-      // Show stub tree immediately
-      document.getElementById('knowledgeHeader').style.display = 'block';
-      document.getElementById('treeContents').innerHTML = `
-        <ol style="opacity:0.5; list-style-position: inside; padding-left:1rem">
-          <li>…waiting for today's plan…</li>
-        </ol>
-      `;
-
-      // Finally, send welcome once
-      setTimeout(() => {
-        addMsg(
-          "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
-          'assistant'
-        );
-      }, 100);
-    }
-
-    /* ---------- EVENTS ---------- */
-    document.addEventListener('DOMContentLoaded', initChat);
-
-    form.onsubmit = e => {
+    /* ---------- EVENT LISTENERS ---------- */
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (input.value.trim()) {
-        send(input.value.trim());
+      const msg = input.value.trim();
+      if (msg) {
+        send(msg);
         input.value = '';
       }
-    };
+    });
 
-    input.onkeydown = e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        form.requestSubmit();
-      }
-    };
+    micBtn.addEventListener('click', () => {
+      // Implement microphone input handling
+    });
 
-    input.oninput = () => {
-      input.style.height = 'auto';
-      input.style.height = input.scrollHeight + 'px';
-    };
+    clearBtn.addEventListener('click', () => {
+      chatBox.innerHTML = '';
+      history = [];
+      student = '';
+      thinking = null;
+      totalNodes = 0;
+      currentTopic = '';
+      updateProgress();
+      saveTreeState();
+    });
 
-    clearBtn.onclick = () => {
-      localStorage.removeItem('treeState');
-      initChat();
-    };
-
-    /* ---------- VOICE ---------- */
-    const rec = 'webkitSpeechRecognition' in window
-      ? new webkitSpeechRecognition()
-      : null;
-    if (rec) {
-      rec.lang = 'en-NG';
-      micBtn.onclick = () => {
-        rec.start(); micBtn.textContent = '🎙️';
-      };
-      rec.onresult = e => {
-        let t = '';
-        for (let i = e.resultIndex; i < e.results.length; ++i)
-          if (e.results[i].isFinal)
-            t += e.results[i][0].transcript;
-        if (t.trim()) {
-          send(t.trim());
-          input.value = '';
-        }
-        micBtn.textContent = '🎤';
-      };
-      rec.onerror = rec.onend = () => micBtn.textContent = '🎤';
-    } else {
-      micBtn.disabled = true;
-      micBtn.title = 'Voice input not supported';
-    }
+    /* ---------- INITIALIZATION ---------- */
+    restoreTreeState();
   </script>
 </body>
-</html> 
+</html>
