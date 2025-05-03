@@ -6,15 +6,29 @@ engaged-learning.com Keep track of what the student has learned; later on, ask r
 Your mission is to help ONE student at a time master any topic 3× faster through a tight assess‑teach‑retest loop grounded in Bloom's Taxonomy, Zone‑of‑Proximal‑Development (ZPD), and Nigerian cultural relevance.
 Speak like a brilliant Nigerian teacher — clear, joyful, supportive; sprinkle everyday Nigerian examples and growth‑mindset praise. Never sound robotic.
 
-When including images, please use ONLY these reliable sources:
-1. Wikimedia Commons: https://upload.wikimedia.org/wikipedia/commons/...
-2. Educational sites: https://www.mathsisfun.com/numbers/images/...
-3. Government educational resources: https://www.education.gov.ng/images/...
+When including images, please use ONLY these reliable sources and formats:
+1. Direct Wikimedia URLs (preferred format):
+   https://upload.wikimedia.org/wikipedia/commons/[hash]/[filename]
+   Example: https://upload.wikimedia.org/wikipedia/commons/8/8c/Addition_example.png
 
-For example:
-Image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Addition_example.svg/500px-Addition_example.svg.png
+2. Math is Fun (direct image URLs):
+   https://www.mathsisfun.com/numbers/images/[filename]
+   Example: https://www.mathsisfun.com/numbers/images/addition-simple.svg
 
-DO NOT use image hosting sites like Imgur, Pinterest, or similar services.
+3. Nigerian Education Resources:
+   https://education.gov.ng/images/[filename]
+
+DO NOT use:
+- No /thumb/ in URLs
+- No size specifications (like 500px-)
+- No indirect or proxy URLs
+- No image hosting sites
+
+Example correct format:
+Image: https://upload.wikimedia.org/wikipedia/commons/8/8c/addition-example.png
+
+Example incorrect format:
+❌ Image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Addition_example.svg/500px-Addition_example.svg.png
 
 ────────────────────
 1.  SESSION START
@@ -126,7 +140,6 @@ function extractImages(text) {
   const images = [];
   const validDomains = [
     'upload.wikimedia.org',
-    'commons.wikimedia.org',
     'www.mathsisfun.com',
     'education.gov.ng'
   ];
@@ -134,23 +147,23 @@ function extractImages(text) {
   // Helper to validate and clean URLs
   const validateAndCleanUrl = (url) => {
     try {
+      // Basic URL cleanup
+      url = url.trim()
+        .replace(/^https?:/, 'https:') // Force HTTPS
+        .replace(/\/thumb\//, '/') // Remove thumbnail path
+        .replace(/\/\d+px-/, '/') // Remove size constraints
+        .replace(/%20/g, '_'); // Replace spaces with underscores
+      
       const urlObj = new URL(url);
       
-      // Check domain
-      const isValidDomain = validDomains.some(domain => 
-        urlObj.hostname.toLowerCase().endsWith(domain)
-      );
+      // Validate domain
+      if (!validDomains.some(domain => urlObj.hostname.toLowerCase() === domain)) {
+        return null;
+      }
       
-      if (!isValidDomain) return null;
-      
-      // Clean up Wikimedia URLs
-      if (urlObj.hostname.includes('wikimedia.org')) {
-        // Remove thumbnail size constraints
-        url = url.replace(/\/\d+px-/, '/');
-        // Remove /thumb/ from path if present
-        url = url.replace('/thumb/', '/');
-        // Ensure HTTPS
-        url = url.replace(/^http:/, 'https:');
+      // Validate file extension
+      if (!/\.(png|jpg|jpeg|gif|svg)$/i.test(urlObj.pathname)) {
+        return null;
       }
       
       return url;
@@ -160,28 +173,17 @@ function extractImages(text) {
     }
   };
 
-  // Match Image: https://... format
-  const imageMatches = text.match(/Image:\s*(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|svg))/gi);
-  if (imageMatches) {
-    const validUrls = imageMatches
-      .map(m => m.replace(/^Image:\s*/i, ''))
-      .map(validateAndCleanUrl)
-      .filter(Boolean); // Remove null values
-    images.push(...validUrls);
+  // Extract URLs from text
+  const urlPattern = /Image:\s*(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|svg))/gi;
+  const matches = [...text.matchAll(urlPattern)];
+  
+  for (const match of matches) {
+    const url = validateAndCleanUrl(match[1]);
+    if (url) images.push(url);
   }
   
-  // Match ![alt](url) format
-  const markdownMatches = text.match(/!\[.*?\]\((https?:\/\/[^\s)]+\.(?:png|jpg|jpeg|gif|svg))\)/g);
-  if (markdownMatches) {
-    const validUrls = markdownMatches
-      .map(m => m.match(/\((https?:\/\/[^\s)]+)\)/)[1])
-      .map(validateAndCleanUrl)
-      .filter(Boolean); // Remove null values
-    images.push(...validUrls);
-  }
-  
-  // Deduplicate
-  return [...new Set(images)].slice(0, 3); // Limit to 3 images max
+  // Deduplicate and limit
+  return [...new Set(images)].slice(0, 3);
 }
 
 function processResponse(reply) {
