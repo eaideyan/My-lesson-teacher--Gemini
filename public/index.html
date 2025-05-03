@@ -545,20 +545,19 @@ function setTree(txt) {
 
     /* ---------- INIT ---------- */
 function initChat() {
-  // 1) Reset state variables
+  // 1) Reset state
   history    = [];
   student    = '';
   totalNodes = 0;
 
-  // 2) Show empty “waiting for today’s plan…” tree
-  document.getElementById('knowledgeHeader').style.display = 'block';
-  document.getElementById('treeContents').innerHTML = `
-    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
-      <li>…waiting for today’s plan…</li>
-    </ol>
-  `;
+  // 2) Clear UI
+  chatBox.innerHTML = '';
+  document.getElementById('visuals').innerHTML       = '<h3>🔍 Topic visuals</h3>';
+  document.getElementById('aboutMrE').style.display  = 'block';
+  document.getElementById('knowledgeHeader').style.display = 'none';
+  document.getElementById('treeContents').innerHTML  = '';
 
-  // 3) Clear & un-hide progress bar + feedback
+  // 3) Clear & show progress bar
   const pv = document.getElementById('progressVisual');
   const pf = document.getElementById('progressFeedback');
   pv.textContent   = '';
@@ -566,10 +565,18 @@ function initChat() {
   pv.style.display = 'block';
   pf.style.display = 'block';
 
-  // 4) Restore any saved tree/progress state
+  // 4) Restore any saved tree/progress
   restoreTreeState();
 
-  // 5) Show the welcome prompt
+  // 5) SHOW SCAFFOLD (optional) **AND THEN** the welcome
+  document.getElementById('knowledgeHeader').style.display = 'block';
+  document.getElementById('treeContents').innerHTML = `
+    <ol style="padding-left:1rem; opacity:0.5; list-style-position: inside">
+      <li>…waiting for today’s plan…</li>
+    </ol>
+  `;
+
+  // 6) Finally, push the welcome into the chat
   setTimeout(() => {
     addMsg(
       "Welcome 🎉 What's your name, grade, and what topic would you like to learn today?",
@@ -577,6 +584,7 @@ function initChat() {
     );
   }, 100);
 }
+
 
     /* ---------- EVENTS ---------- */
     form.onsubmit = e => {
