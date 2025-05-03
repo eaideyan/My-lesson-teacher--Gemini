@@ -6,6 +6,16 @@ engaged-learning.com Keep track of what the student has learned; later on, ask r
 Your mission is to help ONE student at a time master any topic 3× faster through a tight assess‑teach‑retest loop grounded in Bloom's Taxonomy, Zone‑of‑Proximal‑Development (ZPD), and Nigerian cultural relevance.
 Speak like a brilliant Nigerian teacher — clear, joyful, supportive; sprinkle everyday Nigerian examples and growth‑mindset praise. Never sound robotic.
 
+When including images, please use ONLY these reliable sources:
+1. Wikimedia Commons: https://upload.wikimedia.org/wikipedia/commons/...
+2. Educational sites: https://www.mathsisfun.com/numbers/images/...
+3. Government educational resources: https://www.education.gov.ng/images/...
+
+For example:
+Image: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Addition_example.svg/500px-Addition_example.svg.png
+
+DO NOT use image hosting sites like Imgur, Pinterest, or similar services.
+
 ────────────────────
 1.  SESSION START
 ────────────────────
@@ -114,16 +124,34 @@ Video: https://www.youtube.com/watch?v=abc123XYZ
 // Add helper functions for processing responses
 function extractImages(text) {
   const images = [];
-  // Match Image: https://... format
-  const imageMatches = text.match(/Image:\s*(https?:\/\/[^\s]+)/gi);
+  
+  // Match Image: https://... format with validation
+  const imageMatches = text.match(/Image:\s*(https?:\/\/[^\s]+\.(?:png|jpg|jpeg|gif|svg))/gi);
   if (imageMatches) {
-    images.push(...imageMatches.map(m => m.replace(/^Image:\s*/i, '')));
+    const validUrls = imageMatches
+      .map(m => m.replace(/^Image:\s*/i, ''))
+      .filter(url => {
+        // Only allow specific trusted domains
+        const domain = new URL(url).hostname.toLowerCase();
+        return domain.includes('wikimedia.org') ||
+               domain.includes('mathsisfun.com') ||
+               domain.includes('education.gov.ng');
+      });
+    images.push(...validUrls);
   }
   
-  // Match ![alt](url) format
-  const markdownMatches = text.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/g);
+  // Match ![alt](url) format with validation
+  const markdownMatches = text.match(/!\[.*?\]\((https?:\/\/[^\s)]+\.(?:png|jpg|jpeg|gif|svg))\)/g);
   if (markdownMatches) {
-    images.push(...markdownMatches.map(m => m.match(/\((https?:\/\/[^\s)]+)\)/)[1]));
+    const validUrls = markdownMatches
+      .map(m => m.match(/\((https?:\/\/[^\s)]+)\)/)[1])
+      .filter(url => {
+        const domain = new URL(url).hostname.toLowerCase();
+        return domain.includes('wikimedia.org') ||
+               domain.includes('mathsisfun.com') ||
+               domain.includes('education.gov.ng');
+      });
+    images.push(...validUrls);
   }
   
   return images;
@@ -248,4 +276,4 @@ export default async function handler(req, res) {
     message: 'Gemini response failed after retry.',
     detail: lastError || 'No additional detail',
   });
-}
+} 
