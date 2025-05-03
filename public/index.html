@@ -399,12 +399,26 @@ function handleAI(reply) {
   // 3) Clean up chat text
   let clean = cleanupReply(reply);
 
-  // 4) Extract images
-  const images = [];
-  clean = clean.replace(
-    /(?:Image:\s*)?(https?:\/\/\S+\.(?:png|jpe?g|gif|svg))/gi,
-    (_, url) => (images.push(url), '')
-  );
+// 4) Extract images (Markdown + plain)
+const images = [];
+
+// a) Markdown-style images: ![alt](URL)
+clean = clean.replace(
+  /!\[.*?\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
+  (_, url) => {
+    images.push(url);
+    return '';
+  }
+);
+
+// b) Plain “Image: URL” lines
+clean = clean.replace(
+  /Image:\s*(https?:\/\/[^\s)]+)/gi,
+  (_, url) => {
+    images.push(url);
+    return '';
+  }
+);
 
   // 5) Extract YouTube
   const youtube = [];
