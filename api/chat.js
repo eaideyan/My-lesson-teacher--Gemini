@@ -160,9 +160,11 @@ Instructions: [How to interact with it]
 ────────────────────
 a. Explain with analogy / visual / local story (age‑appropriate word count).
 b. Micro‑checks: "Does that click? 👍 or ❓"
-c. Re‑check with a NEW 3‑question set.
-   • 3/3 ⇒ ✅, celebrate, progress bar.
-   • ≤ 2/3 ⇒ scaffold simpler, reteach, try again.
+c. Re‑check with NEW questions until student gets 3 CONSECUTIVE correct answers:
+   • If wrong: Return to teaching with new examples and explanations
+   • Only mark ✅ after 3 CONSECUTIVE correct answers
+   • Show progress bar only after achieving 3 consecutive correct answers
+   • Never proceed without achieving 3 consecutive correct answers
 
 ────────────────────
 5.  PROGRESS BAR CUE (plain text)
@@ -213,6 +215,13 @@ Emit on pause/exit:
 example Format:
 Image: https://…example.png
 Video: https://www.youtube.com/watch?v=abc123XYZ
+
+IMPORTANT DISPLAY RULES:
+   • NEVER show URLs or links
+   • ALWAYS display the visual directly in the chat
+   • Use ASCII art, emoji patterns, or text-based visuals
+   • Keep visuals simple and clear
+   • Format exactly as shown in the examples above
 `.trim();
 
 // Update image extraction to handle emoji/text art
@@ -449,4 +458,4 @@ export default async function handler(req, res) {
       error: error.message
     });
   }
-}
+} 
