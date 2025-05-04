@@ -443,6 +443,21 @@
         return err;
       }
 
+      /* ---------- TREE MARKING ---------- */
+      function markNode(index) {
+        const items = document.querySelectorAll('#treeContents li');
+        if (items[index]) {
+          items[index].innerHTML = items[index].innerHTML.replace(/^[✅🌱]\s*/, '✅ ');
+          
+          // Count completed nodes and update progress
+          const completed = document.querySelectorAll('#treeContents li').length;
+          const marked = document.querySelectorAll('#treeContents li:contains("✅")').length;
+          updateProgress(marked, completed);
+          
+          saveTreeState();
+        }
+      }
+
       /* ---------- PROGRESS TRACKING ---------- */
       function updateProgress(done = 0, total = 0) {
         const filled = '🟢'.repeat(done);
@@ -458,25 +473,25 @@
         `;
         
         const feedback = document.getElementById('progressFeedback');
-        feedback.innerHTML = "Let's begin your learning journey!";
-        
-        if (total > 0) {
-          if (done === total) {
-            feedback.innerHTML = "🎉 Congratulations! Topic mastered!";
-            confetti();
-          } else {
-            feedback.innerHTML = `Keep going! Next concept: ${done+1}/${total}`;
-          }
+        if (total === 0) {
+          feedback.innerHTML = "Let's begin your learning journey!";
+        } else if (done === total) {
+          feedback.innerHTML = "🎉 Congratulations! Topic mastered!";
+          confetti();
+        } else {
+          feedback.innerHTML = `Keep going! Next concept: ${done+1}/${total}`;
         }
       }
 
-      /* ---------- TREE MARKING ---------- */
-      function markNode(index) {
-        const items = document.querySelectorAll('#treeContents li');
-        if (items[index] && !items[index].textContent.includes('✅')) {
-          items[index].innerHTML = '✅ ' + items[index].textContent.replace(/^✅\s*/, '');
-          saveTreeState();
+      // Add jQuery-like contains selector
+      document.querySelectorAll = function(selector) {
+        if (selector.includes(':contains')) {
+          const plainSelector = selector.split(':contains')[0];
+          const searchText = selector.match(/:contains\("([^"]+)"\)/)[1];
+          const elements = document.querySelectorAll(plainSelector);
+          return Array.from(elements).filter(el => el.textContent.includes(searchText));
         }
+        return document.querySelectorAll(selector);
       }
 
       /* ---------- STATE PERSISTENCE ---------- */
