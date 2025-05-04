@@ -450,6 +450,7 @@
         row.className = `message-row ${role}`;
         const av  = document.createElement('div');
         av.className = `avatar ${role}`;
+        av.innerHTML = role === 'assistant' ? '👨‍🏫' : '👤';
         const bub = document.createElement('div');
         bub.className = `bubble ${role}`;
         bub.innerHTML = text
@@ -512,7 +513,8 @@
         const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
         
         pv.innerHTML = `
-          <div style="margin-bottom:5px">🧠 Progress: ${filled}${empty} (${done}/${total} mastered!)</div>
+          <div>🧠 Progress: ${filled}${empty}</div>
+          <div style="margin-top:5px">${done}/${total} mastered!</div>
         `;
         
         const feedback = document.getElementById('progressFeedback');
@@ -569,15 +571,13 @@
         const treeHeader = document.getElementById('knowledgeHeader');
         const treeContent = document.getElementById('treeContents');
         
-        treeHeader.style.display = 'block';
-        treeHeader.textContent = `Knowledge Tree for ${topic} (${subject}, Primary ${grade}):`;
+        treeHeader.textContent = `📘 Knowledge Tree for ${topic}`;
         
         const nodesList = nodes.map((node, i) => 
           `<li>${i === 0 ? '🌱' : '🔁'} ${node}</li>`
         ).join('');
         
-        treeContent.innerHTML = `<ol style="padding-left:1rem">${nodesList}</ol>`;
-        document.getElementById('aboutMrE').style.display = 'none';
+        treeContent.innerHTML = `<ol>${nodesList}</ol>`;
         
         totalNodes = nodes.length;
         updateProgress(0, totalNodes);
@@ -646,7 +646,7 @@
       }
 
       /* ---------- INITIALIZATION ---------- */
-      function initializeApp() {
+      async function initializeApp() {
         const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
         
         // Clear any stale state
@@ -673,132 +673,86 @@
       }
 
       // Initialize the app
-      window.addEventListener('load', () => {
-        initializeApp();
-        // Remove speak toggle from DOM
-        document.getElementById('speakToggleWrapper')?.remove();
-      });
+      window.addEventListener('load', initializeApp);
 
       async function send(msg) {
         try {
-          // ─── 1a) Capture student's name ───────────────────────────────
-          if (!student && /my name is (\w+)/i.test(msg)) {
-            student = msg.match(/my name is (\w+)/i)[1];
-          }
-
-          // ─── 1b) Capture student's grade (Primary X) ──────────────────
-          if (!window.studentGrade) {
-            const gm = msg.match(/primary\s*([1-9])/i);
-            window.studentGrade = gm ? parseInt(gm[1], 10) : null;
-          }
-
+          // Add message to UI immediately
           history.push({ role: 'user', content: msg });
           addMsg(msg, 'user');
 
+          // Show thinking indicator
           thinking = addMsg('💭 Uncle E. is thinking...', 'assistant');
 
+          // Extract student info from message
+          if (!student && msg.toLowerCase().includes('my name is')) {
+            student = msg.match(/my name is\s+(\w+)/i)[1];
+          }
+
+          if (!window.studentGrade && msg.toLowerCase().includes('primary')) {
+            const gradeMatch = msg.match(/primary\s*([1-9])/i);
+            if (gradeMatch) {
+              window.studentGrade = parseInt(gradeMatch[1], 10);
+            }
+          }
+
+          // Make API call
           const res = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ conversation: history })
+            body: JSON.stringify({ 
+              conversation: history,
+              student: student || '',
+              grade: window.studentGrade || null
+            })
           });
-          
-          let data;
-          try {
-            data = await res.json();
-          } catch (e) {
-            throw new Error('Failed to parse response from server');
+
+          // Remove thinking indicator
+          if (thinking) {
+            thinking.remove();
+            thinking = null;
           }
 
+          // Handle response
           if (!res.ok) {
-            throw new Error(data.message || `Server error: ${res.status}`);
+            throw new Error(`Server error: ${res.status}`);
           }
 
-          if (thinking) { thinking.remove(); thinking = null; }
-
-          // Handle the enhanced response format
-          const { message, progress, visuals, knowledgeTree } = data;
-
-          // Update message history with cleaned message
-          let cleanMessage = message.replace(/⚠️/g, '');
-          cleanMessage = cleanMessage.replace(/Do you understand\?.*?/gi, 'Do you understand?');
+          const data = await res.json();
+          
+          // Update UI with response
+          const cleanMessage = data.message.replace(/⚠️/g, '').replace(/Do you understand\?.*?/gi, 'Do you understand?');
           history.push({ role: 'assistant', content: cleanMessage });
+          addMsg(cleanMessage, 'assistant');
 
           // Update knowledge tree if present
-          if (knowledgeTree) {
-            document.getElementById('knowledgeHeader').style.display = 'block';
-            document.getElementById('aboutMrE').style.display = 'none';
-            const treeLines = knowledgeTree.split('\n').filter(l => /^\d+\./.test(l));
+          if (data.knowledgeTree) {
+            const treeLines = data.knowledgeTree.split('\n')
+              .filter(l => /^\d+\./.test(l))
+              .map(l => l.replace(/^\d+\.\s*/, ''));
+            
             if (treeLines.length) {
-              const treeHtml = treeLines.map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('');
-              document.getElementById('treeContents').innerHTML = `<ol style="padding-left:1rem">${treeHtml}</ol>`;
+              createKnowledgeTree(
+                data.topic || 'Learning Path',
+                data.subject || '',
+                window.studentGrade || '',
+                treeLines
+              );
             }
           }
 
           // Update progress if present
-          if (progress) {
-            updateProgress(progress.done, progress.total);
+          if (data.progress) {
+            updateProgress(data.progress.done, data.progress.total);
           }
 
-          // Display the message
-          addMsg(cleanMessage, 'assistant');
-          speak(cleanMessage);
-
-          // Handle visuals in the sidebar
-          if (visuals && visuals.length > 0) {
-            const visualsDiv = document.getElementById('visuals');
-            visualsDiv.innerHTML = '<h3>🔍 Topic visuals</h3>';
-            
-            const visualContainer = document.createElement('div');
-            visualContainer.style.cssText = `
-              display: flex;
-              flex-direction: column;
-              gap: 1rem;
-              padding: 0.5rem;
-            `;
-            
-            for (const visual of visuals) {
-              const visualBox = document.createElement('div');
-              visualBox.className = 'visual-aid-box';
-              
-              // Format the visual content
-              let formattedContent = visual.content
-                .replace(/→|↓|↑/g, match => `<span class="arrow">${match}</span>`)
-                .replace(/(\p{Emoji}+)/gu, match => `<span class="emoji">${match}</span>`)
-                .replace(/\((.*?)\)/g, (_, label) => `<span class="label">(${label})</span>`);
-              
-              visualBox.innerHTML = formattedContent;
-              
-              // Add instructions if present
-              if (visual.instructions) {
-                const instructions = document.createElement('div');
-                instructions.className = 'visual-aid-instruction';
-                instructions.textContent = visual.instructions;
-                visualBox.appendChild(instructions);
-              }
-              
-              visualContainer.appendChild(visualBox);
-            }
-            
-            visualsDiv.appendChild(visualContainer);
-          } else {
-            // No visuals to display
-            const visualsDiv = document.getElementById('visuals');
-            visualsDiv.innerHTML = `
-              <h3>🔍 Topic visuals</h3>
-              <div class="visual-aid-box">
-                Let's practice drawing this!<br>
-                I can guide you step by step.
-              </div>
-            `;
-          }
         } catch (error) {
           console.error('Error in send function:', error);
           if (thinking) {
             thinking.remove();
             thinking = null;
           }
-          addMsg('Sorry, I encountered an error. Please try again.', 'assistant');
+          addMsg('Sorry, I encountered an error. Please try again in a moment.', 'assistant');
         }
       }
 
@@ -812,31 +766,8 @@
         }
       });
 
-      // Add enter key submission
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          form.dispatchEvent(new Event('submit'));
-        }
-      });
-
-      micBtn.addEventListener('click', () => {
-        // Implement microphone input handling
-      });
-
-      clearBtn.addEventListener('click', () => {
-        chatBox.innerHTML = '';
-        history = [];
-        student = '';
-        thinking = null;
-        totalNodes = 0;
-        currentTopic = '';
-        consecutiveCorrect = 0;
-        questionCount = 0;
-        currentNode = 0;
-        updateProgress();
-        saveTreeState();
-      });
+      // Initialize the app
+      window.addEventListener('load', initializeApp);
     </script>
 </body>
 </html> 
