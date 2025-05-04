@@ -116,6 +116,7 @@
       }
 
       #knowledgeContent {
+        display: none;
         background: white;
         border-radius: var(--radius);
         border: 1px solid var(--border);
@@ -202,9 +203,9 @@
         flex: 1;
         background: var(--surface);
         border-radius: var(--radius-lg);
-        border: 2px solid var(--border);
-        padding: 0.5rem;
-        display: flex; 
+        border: 1px solid var(--border);
+        padding: 0.75rem;
+        display: flex;
         flex-direction: column;
         overflow: hidden;
         margin-bottom: 4rem;
@@ -213,20 +214,20 @@
       #chat {
         flex: 1;
         overflow-y: auto;
-        display: flex; 
-        flex-direction: column; 
-        gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
         padding-right: 0.25rem;
       }
 
       /* ---------- MESSAGES ---------- */
-      .message-row { 
-        display: flex; 
+      .message-row {
+        display: flex;
         align-items: flex-start;
         gap: 0.5rem;
       }
       
-      .message-row.user { 
+      .message-row.user {
         justify-content: flex-end;
       }
 
@@ -240,10 +241,10 @@
         justify-content: center;
         font-size: 1rem;
         background: var(--background);
-        border: 2px solid var(--border);
+        border: 1px solid var(--border);
       }
 
-      .user .avatar { 
+      .user .avatar {
         background: var(--primary);
         color: var(--surface);
       }
@@ -254,7 +255,7 @@
       }
 
       .bubble {
-        max-width: 90%;
+        max-width: 85%;
         padding: 0.75rem;
         border-radius: var(--radius-lg);
         font-size: 0.95rem;
@@ -271,7 +272,7 @@
 
       .bubble.assistant {
         background: var(--background);
-        border: 2px solid var(--border);
+        border: 1px solid var(--border);
         border-bottom-left-radius: 0;
       }
 
@@ -289,20 +290,19 @@
         padding: 0.5rem;
         display: flex;
         gap: 0.5rem;
-        align-items: center;
+        align-items: flex-start;
       }
 
       textarea {
         flex: 1;
-        border: 2px solid var(--border);
+        border: 1px solid var(--border);
         border-radius: var(--radius-lg);
-        padding: 0.5rem 0.75rem;
+        padding: 0.75rem;
         font-size: 0.95rem;
-        min-height: 2.25rem;
+        min-height: 2.5rem;
         max-height: 8rem;
         resize: none;
         background: var(--background);
-        transition: border-color 0.2s ease;
       }
 
       textarea:focus {
@@ -322,14 +322,27 @@
       }
 
       button {
-        padding: 0.5rem 1rem;
+        border: none;
         border-radius: var(--radius);
+        padding: 0.5rem 1rem;
         font-size: 0.95rem;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      button[type="submit"], #micButton {
+        background: var(--primary);
+        color: var(--surface);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
       }
 
       .clear-button {
         width: 100%;
-        background: #ff6b6b;
+        background: var(--accent);
+        color: var(--surface);
         padding: 0.4rem;
         font-size: 0.85rem;
       }
@@ -339,6 +352,25 @@
         main#wrapper {
           margin-top: 2.25rem;
           min-height: calc(100vh - 6.5rem);
+        }
+
+        #leftSidebar, #visuals {
+          display: none;
+        }
+
+        #chatBoxWrapper {
+          margin: 0 -0.5rem 3.5rem;
+          border-radius: 0;
+          border-left: 0;
+          border-right: 0;
+        }
+
+        form {
+          padding: 0.5rem;
+        }
+
+        textarea {
+          font-size: 16px;
         }
       }
 
@@ -615,7 +647,7 @@
       function initializeApp() {
         const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
         
-        // Show initial greeting
+        // Show initial greeting, hide knowledge tree
         document.getElementById('aboutMrE').style.display = 'block';
         document.getElementById('knowledgeContent').style.display = 'none';
         
@@ -636,6 +668,28 @@
             resetState();
           }
         }
+      }
+
+      /* ---------- KNOWLEDGE TREE CREATION ---------- */
+      function createKnowledgeTree(topic, subject, grade, nodes) {
+        // Hide greeting, show knowledge tree
+        document.getElementById('aboutMrE').style.display = 'none';
+        document.getElementById('knowledgeContent').style.display = 'block';
+        
+        const treeHeader = document.getElementById('knowledgeHeader');
+        const treeContent = document.getElementById('treeContents');
+        
+        treeHeader.innerHTML = `📘 Knowledge Tree`;
+        
+        const nodesList = nodes.map((node, i) => 
+          `<li>${i + 1}. 🌱 ${node}</li>`
+        ).join('');
+        
+        treeContent.innerHTML = `<ol>${nodesList}</ol>`;
+        
+        totalNodes = nodes.length;
+        updateProgress(0, totalNodes);
+        saveTreeState();
       }
 
       // Initialize the app
