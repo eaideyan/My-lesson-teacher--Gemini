@@ -2,9 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Uncle E. – Your AI Tutor 🇳🇬</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Optimized font loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" 
+        rel="stylesheet" media="print" onload="this.media='all'">
+  <!-- Fallback in case JavaScript is disabled -->
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" 
+          rel="stylesheet">
+  </noscript>
   <style>
     /* ---------- BASE ---------- */
     * { box-sizing: border-box; margin: 0; padding: 0 }
@@ -229,56 +238,333 @@
       font-size: 2.6rem; pointer-events: none;
       animation: floatUp 1.3s ease-out forwards;
     }
+
+    /* Add Modal Styles */
+    .auth-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1100;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .auth-modal.show {
+      display: block;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1050;
+    }
+
+    .modal-overlay.show {
+      display: block;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .auth-form input {
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .auth-form button {
+      background: #2563eb;
+      color: white;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .auth-form .google-btn {
+      background: white;
+      color: #333;
+      border: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .auth-tab {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .auth-tab.active {
+      border-bottom-color: #2563eb;
+      color: #2563eb;
+    }
+
+    /* Trial Badge */
+    .trial-badge {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #10b981;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      z-index: 1000;
+    }
+
+    /* Base styles */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: #2962ff;
+      color: white;
+      padding: 0.5rem;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .progress-bar {
+      background: rgba(255,255,255,0.1);
+      padding: 0.3rem;
+      border-radius: 20px;
+      margin-top: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .main-content {
+      margin-top: 60px;
+      padding: 1rem;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .knowledge-tree {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+    }
+
+    .knowledge-tree-header {
+      padding: 0.5rem;
+      background: #f5f5f5;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .knowledge-tree-content {
+      padding: 0.5rem;
+    }
+
+    .tree-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .chat-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      margin-bottom: 60px;
+    }
+
+    .input-container {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      padding: 0.5rem;
+      background: white;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .message-input {
+      flex-grow: 1;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      font-size: 1rem;
+    }
+
+    .send-button {
+      padding: 0.8rem 1.2rem;
+      background: #2962ff;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 1rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .knowledge-tree {
+        display: none; /* Hide on mobile by default */
+      }
+      
+      .show-tree-button {
+        display: block;
+        padding: 0.5rem;
+        background: #2962ff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        position: fixed;
+        bottom: 70px;
+        right: 1rem;
+        z-index: 99;
+      }
+      
+      .knowledge-tree.active {
+        display: block;
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 60px;
+        z-index: 98;
+        margin: 1rem;
+        overflow-y: auto;
+      }
+    }
+
+    /* Touch-friendly styles */
+    @media (max-width: 480px) {
+      .send-button, .message-input {
+        padding: 0.6rem;
+      }
+      
+      .tree-item {
+        padding: 0.8rem 0.5rem; /* Larger touch target */
+      }
+      
+      .progress-bar {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* High-contrast mode for low-end displays */
+    @media (prefers-contrast: high) {
+      .header {
+        background: #0039cb;
+      }
+      
+      .tree-item {
+        border-bottom: 2px solid #ddd;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>
-    Uncle E. 
-    <small>Powered by ValueFirst</small>
-  </header>
+  <!-- Add Modal HTML -->
+  <div class="modal-overlay" id="authOverlay"></div>
+  <div class="auth-modal" id="authModal">
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="signup">Sign Up</div>
+      <div class="auth-tab" data-tab="login">Login</div>
+    </div>
+    <form class="auth-form" id="authForm">
+      <div id="signupFields">
+        <input type="text" placeholder="Student's Name" id="nameInput" required>
+        <input type="number" placeholder="Class/Grade" id="gradeInput" required>
+        <input type="email" placeholder="Student's Email" id="emailInput" required>
+        <input type="email" placeholder="Parent's Email" id="parentEmailInput" required>
+        <input type="password" placeholder="Password" id="passwordInput" required>
+      </div>
+      <div id="loginFields" style="display:none">
+        <input type="email" placeholder="Email" id="loginEmail" required>
+        <input type="password" placeholder="Password" id="loginPassword" required>
+      </div>
+      <button type="submit" id="authSubmit">Sign Up</button>
+      <button type="button" class="google-btn" id="googleAuth">
+        <img src="https://www.google.com/favicon.ico" width="20" height="20" alt="Google">
+        Continue with Google
+      </button>
+    </form>
+  </div>
+
+  <!-- Add Trial Badge -->
+  <div class="trial-badge" id="trialBadge" style="display:none">
+    Trial: <span id="trialDays">5</span> days remaining
+  </div>
+
+  <div class="app-container">
+    <header class="header">
+      <h1>Uncle E.</h1>
+      <div class="progress-bar">
+        🧠 Progress: 🟢⚪⚪⚪⚪
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="chat-container">
+        <div id="chat"></div>
+      </div>
+    </main>
+
+    <button class="show-tree-button">
+      📚
+    </button>
+
+    <div class="knowledge-tree">
+      <div class="knowledge-tree-header">
+        <h2>Knowledge Tree</h2>
+        <button class="close-tree">✕</button>
+      </div>
+      <div class="knowledge-tree-content">
+        <div id="treeContents" style="margin-top:.8rem"></div>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <input type="text" class="message-input" placeholder="Type your message...">
+      <button class="send-button">Send</button>
+    </div>
+  </div>
+
   <div id="speakToggleWrapper">
     <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
   </div>
-
-  <main id="wrapper">
-    <aside id="leftSidebar">
-      <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
-      <div id="knowledgeContent" style="overflow:auto">
-        <div id="aboutMrE">
-          <p><strong>I am Uncle E.</strong></p>
-          <p>
-            Your friendly AI tutor! 🌟<br>
-            I'll help you learn step by step.<br>
-            Feel free to ask questions and relax!
-          </p>
-          <p><strong>Great!</strong></p>
-        </div>
-        <div id="treeContents" style="margin-top:.8rem"></div>
-        <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
-        <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
-      </div>
-    </aside>
-
-    <div id="chatBoxWrapper">
-      <div id="chat"></div>
-    </div>
-
-    <aside id="visuals">
-      <h3>🔍 Topic visuals</h3>
-      <div id="visualsContent"></div>
-    </aside>
-  </main>
-
-  <form id="chat-form">
-    <textarea id="messageInput" placeholder="Type your message…" required></textarea>
-    <div id="controls">
-      <div class="top-buttons">
-        <button type="submit">Send</button>
-        <button type="button" id="micButton">🎤</button>
-      </div>
-      <button type="button" class="clear-button" id="clearButton">🗑️ Clear</button>
-    </div>
-  </form>
 
   <script>
     /* ---------- DOM ---------- */
@@ -295,6 +581,133 @@
     let thinking = null;
     let totalNodes = 0;
     let currentTopic = '';
+    let userSession = null;
+    let nodeCount = 0;
+    let trialStarted = false;
+
+    /* ---------- SESSION MANAGEMENT ---------- */
+    const SESSION_CONFIG = {
+        MAX_DURATION: 2 * 60 * 60 * 1000, // 2 hours in milliseconds
+        WARNING_TIME: 1.75 * 60 * 60 * 1000, // Warning at 1.75 hours (15 min before end)
+        STORAGE_KEY: 'uncle_e_session'
+    };
+
+    class SessionManager {
+        constructor() {
+            this.sessionStart = Date.now();
+            this.currentTopic = '';
+            this.topicMessages = [];
+            this.loadSession();
+            this.startSessionTimer();
+        }
+
+        loadSession() {
+            try {
+                const saved = localStorage.getItem(SESSION_CONFIG.STORAGE_KEY);
+                if (saved) {
+                    const session = JSON.parse(saved);
+                    // Only restore if it's from today
+                    if (this.isSameDay(new Date(session.timestamp))) {
+                        this.sessionStart = session.sessionStart;
+                        this.currentTopic = session.currentTopic;
+                        this.topicMessages = session.topicMessages;
+                        // Restore chat display
+                        this.topicMessages.forEach(msg => addMsg(msg.content, msg.role));
+                    } else {
+                        this.clearSession();
+                    }
+                }
+            } catch (e) {
+                console.error('Session load error:', e);
+                this.clearSession();
+            }
+        }
+
+        saveSession() {
+            try {
+                const sessionData = {
+                    sessionStart: this.sessionStart,
+                    currentTopic: this.currentTopic,
+                    topicMessages: this.topicMessages,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(SESSION_CONFIG.STORAGE_KEY, JSON.stringify(sessionData));
+            } catch (e) {
+                console.error('Session save error:', e);
+            }
+        }
+
+        clearSession() {
+            this.sessionStart = Date.now();
+            this.currentTopic = '';
+            this.topicMessages = [];
+            localStorage.removeItem(SESSION_CONFIG.STORAGE_KEY);
+            chatBox.innerHTML = '';
+        }
+
+        isSameDay(date) {
+            const now = new Date();
+            return date.getDate() === now.getDate() &&
+                   date.getMonth() === now.getMonth() &&
+                   date.getFullYear() === now.getFullYear();
+        }
+
+        addMessage(content, role) {
+            const message = { content, role, timestamp: Date.now() };
+            this.topicMessages.push(message);
+            this.saveSession();
+        }
+
+        startSessionTimer() {
+            setInterval(() => {
+                const sessionDuration = Date.now() - this.sessionStart;
+                
+                // Warning at 2.75 hours
+                if (sessionDuration >= SESSION_CONFIG.WARNING_TIME && 
+                    sessionDuration < SESSION_CONFIG.MAX_DURATION) {
+                    this.showSessionWarning();
+                }
+                
+                // Session end at 3 hours
+                if (sessionDuration >= SESSION_CONFIG.MAX_DURATION) {
+                    this.endSession();
+                }
+            }, 60000); // Check every minute
+        }
+
+        showSessionWarning() {
+            const warningMsg = "⚠️ You've been learning for 1 hour and 45 minutes. " +
+                              "Your session will end in 15 minutes. " +
+                              "Let's wrap up this topic! 🎯";
+            addMsg(warningMsg, 'assistant');
+        }
+
+        endSession() {
+            const endMsg = "🎉 Excellent work! You've completed your 2-hour learning session. " +
+                          "Time to take a break and let your mind process what you've learned. " +
+                          "Remember: short, focused sessions help you learn better! " +
+                          "See you next time! 👋";
+            addMsg(endMsg, 'assistant');
+            
+            // Save progress before clearing
+            saveTreeState();
+            
+            // Clear after a short delay to show the message
+            setTimeout(() => {
+                this.clearSession();
+            }, 5000);
+        }
+
+        setTopic(topic) {
+            if (this.currentTopic !== topic) {
+                this.currentTopic = topic;
+                this.saveSession();
+            }
+        }
+    }
+
+    // Initialize session manager
+    const sessionManager = new SessionManager();
 
     /* ---------- HELPERS ---------- */
     function addMsg(text, role) {
@@ -428,8 +841,95 @@
       }
     }
 
+    function showAuthModal() {
+      document.getElementById('authOverlay').classList.add('show');
+      document.getElementById('authModal').classList.add('show');
+    }
+
+    function hideAuthModal() {
+      document.getElementById('authOverlay').classList.remove('show');
+      document.getElementById('authModal').classList.remove('show');
+    }
+
+    // Handle tab switching
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const isSignup = tab.dataset.tab === 'signup';
+        document.getElementById('signupFields').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('loginFields').style.display = isSignup ? 'none' : 'block';
+        document.getElementById('authSubmit').textContent = isSignup ? 'Sign Up' : 'Login';
+      });
+    });
+
+    // Handle form submission
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const isSignup = document.querySelector('.auth-tab.active').dataset.tab === 'signup';
+      
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: isSignup ? 'signup' : 'login',
+            data: isSignup ? {
+              name: document.getElementById('nameInput').value,
+              grade: document.getElementById('gradeInput').value,
+              email: document.getElementById('emailInput').value,
+              parentEmail: document.getElementById('parentEmailInput').value,
+              password: document.getElementById('passwordInput').value
+            } : {
+              email: document.getElementById('loginEmail').value,
+              password: document.getElementById('loginPassword').value
+            }
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          userSession = data.user;
+          hideAuthModal();
+          startTrial();
+          updateUI();
+        } else {
+          alert(data.message || 'Authentication failed');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        alert('Authentication failed. Please try again.');
+      }
+    });
+
+    function startTrial() {
+      if (!trialStarted) {
+        trialStarted = true;
+        const trialBadge = document.getElementById('trialBadge');
+        trialBadge.style.display = 'block';
+        
+        // Start countdown
+        let daysLeft = 5;
+        document.getElementById('trialDays').textContent = daysLeft;
+        
+        const trialInterval = setInterval(() => {
+          daysLeft--;
+          document.getElementById('trialDays').textContent = daysLeft;
+          if (daysLeft <= 0) {
+            clearInterval(trialInterval);
+            trialBadge.style.display = 'none';
+            // Handle trial expiration
+          }
+        }, 24 * 60 * 60 * 1000); // Check every 24 hours
+      }
+    }
+
     async function send(msg) {
       try {
+        // Add message to session
+        sessionManager.addMessage(msg, 'user');
+        
         // ─── 1a) Capture student's name ───────────────────────────────
         if (!student && /my name is (\w+)/i.test(msg)) {
           student = msg.match(/my name is (\w+)/i)[1];
@@ -541,8 +1041,43 @@
             </div>
           `;
         }
+
+        // After successful response
+        nodeCount++;
+        
+        // Show auth modal after first node
+        if (nodeCount === 1 && !userSession) {
+          showAuthModal();
+        }
+
+        // Track progress if logged in
+        if (userSession) {
+          await fetch('/api/progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: userSession.id,
+              nodeCompleted: nodeCount,
+              topic: currentTopic,
+              timestamp: new Date().toISOString()
+            })
+          });
+        }
+
+        // Add assistant's response to session
+        if (data?.message) {
+            sessionManager.addMessage(data.message, 'assistant');
+            
+            // Update topic if it's in the response
+            if (data.knowledgeTree) {
+                const topicMatch = data.knowledgeTree.match(/Knowledge Tree for ([^:]+):/);
+                if (topicMatch) {
+                    sessionManager.setTopic(topicMatch[1].trim());
+                }
+            }
+        }
       } catch (error) {
-        console.error('Error in send function:', error);
+        console.error('Error in send():', error);
       }
     }
 
@@ -561,18 +1096,19 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      chatBox.innerHTML = '';
-      history = [];
-      student = '';
-      thinking = null;
-      totalNodes = 0;
-      currentTopic = '';
-      updateProgress();
-      saveTreeState();
+      sessionManager.clearSession();
     });
 
     /* ---------- INITIALIZATION ---------- */
     restoreTreeState();
+
+    document.querySelector('.show-tree-button').addEventListener('click', () => {
+      document.querySelector('.knowledge-tree').classList.toggle('active');
+    });
+
+    document.querySelector('.close-tree').addEventListener('click', () => {
+      document.querySelector('.knowledge-tree').classList.remove('active');
+    });
   </script>
 </body>
 </html>
