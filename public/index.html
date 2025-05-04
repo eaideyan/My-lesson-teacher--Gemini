@@ -49,12 +49,12 @@
         position: fixed; 
         top: 0; left: 0; right: 0; 
         z-index: 10;
-        padding: 0.5rem;
+        padding: 0.4rem;
         background: var(--primary);
         color: var(--surface);
         text-align: center;
         line-height: 1.2;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: 700;
         border-bottom-left-radius: var(--radius);
         border-bottom-right-radius: var(--radius);
@@ -62,7 +62,7 @@
 
       header small { 
         display: block; 
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         opacity: 0.9;
         margin-top: 0.1rem;
       }
@@ -74,7 +74,7 @@
         gap: 0.5rem;
         max-width: var(--content-max-width); 
         width: 100%; 
-        margin: 3.5rem auto 0;
+        margin: 2.75rem auto 0;
         padding: 0 var(--wrapper-padding);
       }
 
@@ -99,17 +99,25 @@
         background: var(--surface);
       }
 
-      /* Update Knowledge Tree styles */
+      /* ---------- KNOWLEDGE TREE ---------- */
       #knowledgeContent {
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      #knowledgeHeader {
+        font-size: 1rem;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border);
+        margin: 0;
         display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+        align-items: center;
+        gap: 0.5rem;
       }
 
       #treeContents {
-        background: var(--surface);
-        border: 2px solid var(--border);
-        border-radius: var(--radius);
         padding: 0.75rem;
       }
 
@@ -117,53 +125,45 @@
         list-style: none;
         padding: 0;
         margin: 0;
-      }
-
-      #treeContents li {
-        padding: 0.5rem;
-        color: var(--text);
-        border-bottom: 1px solid var(--border);
-        font-size: 0.9rem;
-        transition: background-color 0.2s ease;
-      }
-
-      #treeContents li:last-child {
-        border-bottom: none;
-      }
-
-      #treeContents li:hover {
-        background: var(--background);
-      }
-
-      #knowledgeHeader {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text);
-        margin-bottom: 0.25rem;
-      }
-
-      /* Progress section styles */
-      #progressSection {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
       }
 
-      #progressVisual {
-        background: var(--background);
-        border: 2px solid var(--border);
-        border-radius: var(--radius);
+      #treeContents li {
+        padding: 0;
+        border: none;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      #progressSection {
         padding: 0.75rem;
+        border-top: 1px solid var(--border);
+      }
+
+      #progressVisual {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .progress-icons {
+        display: flex;
+        gap: 0.25rem;
+        margin: 0.25rem 0;
       }
 
       #progressFeedback {
-        color: var(--text-light);
-        font-size: 0.85rem;
+        color: var(--text);
+        font-size: 0.9rem;
         text-align: center;
-        padding: 0.5rem;
-        background: var(--background);
-        border-radius: var(--radius);
-        border: 2px solid var(--border);
       }
 
       /* Visual Aid Box */
@@ -337,6 +337,11 @@
 
         main#wrapper {
           padding: 0 var(--wrapper-padding);
+          margin-top: 2.5rem;
+        }
+
+        header {
+          padding: 0.35rem;
         }
 
         #chatBoxWrapper {
@@ -506,15 +511,15 @@
 
       /* ---------- PROGRESS TRACKING ---------- */
       function updateProgress(done = 0, total = 0) {
-        const filled = '🟢'.repeat(done);
-        const empty = '⬜'.repeat(Math.max(total - done, 0));
-        
         const pv = document.getElementById('progressVisual');
         const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
         
         pv.innerHTML = `
-          <div>🧠 Progress: ${filled}${empty}</div>
-          <div style="margin-top:5px">${done}/${total} mastered!</div>
+          <div>🧠 Progress: ${percentage}%</div>
+          <div class="progress-icons">
+            ${'🟢'.repeat(done)}
+          </div>
+          <div>${done}/${total} concepts mastered</div>
         `;
         
         const feedback = document.getElementById('progressFeedback');
@@ -571,10 +576,10 @@
         const treeHeader = document.getElementById('knowledgeHeader');
         const treeContent = document.getElementById('treeContents');
         
-        treeHeader.textContent = `📘 Knowledge Tree for ${topic}`;
+        treeHeader.innerHTML = `📘 Knowledge Tree`;
         
         const nodesList = nodes.map((node, i) => 
-          `<li>${i === 0 ? '🌱' : '🔁'} ${node}</li>`
+          `<li>🌱 ${node}</li>`
         ).join('');
         
         treeContent.innerHTML = `<ol>${nodesList}</ol>`;
