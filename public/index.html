@@ -99,41 +99,71 @@
         background: var(--surface);
       }
 
-      /* Progress Display */
-      #progressVisual {
-        padding: 0.5rem;
-        background: var(--background);
-        border-radius: var(--radius);
-        margin: 0.25rem 0;
-        font-size: 0.9rem;
-        line-height: 1.4;
-        border: 2px solid var(--border);
+      /* Update Knowledge Tree styles */
+      #knowledgeContent {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
       }
 
-      #progressFeedback {
-        padding: 0.5rem;
-        color: var(--text-light);
-        font-size: 0.85rem;
-        text-align: center;
-        background: var(--background);
-        border-radius: var(--radius);
+      #treeContents {
+        background: var(--surface);
         border: 2px solid var(--border);
-        margin-top: 0.25rem;
+        border-radius: var(--radius);
+        padding: 0.75rem;
       }
 
-      /* Knowledge Tree */
+      #treeContents ol {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
       #treeContents li {
         padding: 0.5rem;
-        margin: 0.25rem 0;
-        background: var(--background);
-        border-radius: var(--radius);
-        border: 2px solid var(--border);
-        transition: transform 0.2s ease;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
         font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+      }
+
+      #treeContents li:last-child {
+        border-bottom: none;
       }
 
       #treeContents li:hover {
-        transform: translateY(-2px);
+        background: var(--background);
+      }
+
+      #knowledgeHeader {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+
+      /* Progress section styles */
+      #progressSection {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      #progressVisual {
+        background: var(--background);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.75rem;
+      }
+
+      #progressFeedback {
+        color: var(--text-light);
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 0.5rem;
+        background: var(--background);
+        border-radius: var(--radius);
+        border: 2px solid var(--border);
       }
 
       /* Visual Aid Box */
@@ -364,20 +394,13 @@
 
     <main id="wrapper">
         <aside id="leftSidebar">
-            <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
-            <div id="knowledgeContent" style="overflow:auto">
-                <div id="aboutMrE">
-                    <p><strong>I am Uncle E.</strong></p>
-                    <p>
-                        Your friendly AI tutor! 🌟<br>
-                        I'll help you learn step by step.<br>
-                        Feel free to ask questions and relax!
-                    </p>
-                    <p><strong>Great!</strong></p>
+            <div id="knowledgeContent">
+                <h3 id="knowledgeHeader">📘 Knowledge Tree</h3>
+                <div id="treeContents"></div>
+                <div id="progressSection">
+                    <div id="progressVisual"></div>
+                    <div id="progressFeedback"></div>
                 </div>
-                <div id="treeContents" style="margin-top:.8rem"></div>
-                <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
-                <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
             </div>
         </aside>
 
