@@ -456,20 +456,18 @@
           <div>${filled}${empty}</div>
           <div style="margin-top:5px">${done}/${total} concepts mastered</div>
         `;
-        pv.classList.add('pulse');
         
         const feedback = document.getElementById('progressFeedback');
-        if (total === 0) {
-          feedback.innerHTML = "Let's begin your learning journey!";
-        } else if (done === total) {
-          feedback.innerHTML = "🎉 Congratulations! Topic mastered!";
-          confetti();
-        } else {
-          feedback.innerHTML = `Keep going! Next concept: ${done+1}/${total}`;
-        }
+        feedback.innerHTML = "Let's begin your learning journey!";
         
-        saveTreeState();
-        setTimeout(() => pv.classList.remove('pulse'), 300);
+        if (total > 0) {
+          if (done === total) {
+            feedback.innerHTML = "🎉 Congratulations! Topic mastered!";
+            confetti();
+          } else {
+            feedback.innerHTML = `Keep going! Next concept: ${done+1}/${total}`;
+          }
+        }
       }
 
       /* ---------- TREE MARKING ---------- */
@@ -486,7 +484,7 @@
         try {
           const treeHTML = document.getElementById('treeContents').innerHTML;
           const progress = {
-            done: (document.getElementById('progressVisual').textContent.match(/🟢/g) || []).length,
+            done: (treeHTML.match(/✅/g) || []).length,
             total: totalNodes
           };
           
@@ -494,6 +492,7 @@
             localStorage.setItem('treeState', JSON.stringify({
               treeHTML,
               progress,
+              history,
               timestamp: Date.now()
             }));
           }
@@ -505,20 +504,57 @@
       function restoreTreeState() {
         try {
           const saved = JSON.parse(localStorage.getItem('treeState'));
-          if (saved?.treeHTML) {
+          if (saved?.treeHTML && saved?.progress) {
             document.getElementById('treeContents').innerHTML = saved.treeHTML;
             document.getElementById('knowledgeHeader').style.display = 'block';
             document.getElementById('aboutMrE').style.display = 'none';
             
-            if (saved.progress) {
-              totalNodes = saved.progress.total || 0;
-              updateProgress(saved.progress.done || 0, totalNodes);
+            totalNodes = saved.progress.total || 0;
+            updateProgress(saved.progress.done || 0, totalNodes);
+            
+            if (saved.history && Array.isArray(saved.history)) {
+              history = saved.history;
+              saved.history.forEach(msg => addMsg(msg.content, msg.role));
             }
           }
         } catch (e) {
           console.error('Failed to restore state:', e);
+          // If restoration fails, ensure clean state
+          localStorage.removeItem('treeState');
+          history = [];
+          updateProgress(0, 0);
         }
       }
+
+      /* ---------- INITIALIZATION ---------- */
+      function initializeApp() {
+        const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
+        
+        try {
+          const savedState = localStorage.getItem('treeState');
+          if (!savedState) {
+            // New session
+            addMsg(welcomeMessage, 'assistant');
+            history.push({ role: 'assistant', content: welcomeMessage });
+            updateProgress(0, 0);
+          } else {
+            // Restore existing session
+            restoreTreeState();
+          }
+        } catch (e) {
+          // Fallback to new session if anything fails
+          console.error('Failed to initialize:', e);
+          addMsg(welcomeMessage, 'assistant');
+          history.push({ role: 'assistant', content: welcomeMessage });
+          updateProgress(0, 0);
+        }
+      }
+
+      // Initialize the app
+      initializeApp();
+
+      // Remove speak toggle from DOM
+      document.getElementById('speakToggleWrapper')?.remove();
 
       async function send(msg) {
         try {
@@ -675,20 +711,6 @@
         updateProgress();
         saveTreeState();
       });
-
-      /* ---------- INITIALIZATION ---------- */
-      // Add welcome message first
-      const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
-      if (!localStorage.getItem('treeState') && !history.length) {
-        addMsg(welcomeMessage, 'assistant');
-        history.push({ role: 'assistant', content: welcomeMessage });
-      }
-
-      // Then restore any saved state
-      restoreTreeState();
-
-      // Remove speak toggle from DOM
-      document.getElementById('speakToggleWrapper')?.remove();
     </script>
 </body>
 </html> 
