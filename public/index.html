@@ -329,6 +329,10 @@
                     <p><strong>Great!</strong></p>
                 </div>
                 <div id="treeContents" style="margin-top:.8rem"></div>
+                <div class="progress-display" style="margin-top:1rem;color:#4b5563;font-size:0.9rem">
+                    Progress: 0%<br>
+                    0/0 concepts mastered
+                </div>
                 <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
                 <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
             </div>
@@ -633,6 +637,14 @@
         if (msg) {
           send(msg);
           input.value = '';
+        }
+      });
+
+      // Add enter key submission
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          form.dispatchEvent(new Event('submit'));
         }
       });
 
