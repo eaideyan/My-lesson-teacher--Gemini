@@ -317,56 +317,192 @@
         font-size: 2.6rem; pointer-events: none;
         animation: floatUp 1.3s ease-out forwards;
       }
+
+      /* ---------- MAIN INTERFACE ---------- */
+      #mainInterface {
+        display: none; /* Hide initially */
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      #mainInterface.visible {
+        display: block;
+        opacity: 1;
+      }
+
+      /* ---------- WELCOME OVERLAY STYLES ---------- */
+      .welcome-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(37, 99, 235, 0.95); /* Semi-transparent blue */
+        backdrop-filter: blur(8px); /* Subtle blur effect */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        opacity: 0;
+        transition: all 0.5s ease;
+      }
+
+      .welcome-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        max-width: 90%;
+        width: 500px;
+        text-align: center;
+        animation: float 3s ease-in-out infinite;
+        transform: translateY(30px);
+        opacity: 0;
+        transition: all 0.5s ease;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+
+      .welcome-container h1 {
+        color: #2563eb;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+      }
+
+      .welcome-container p {
+        color: #4b5563;
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+      }
+
+      .welcome-input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .welcome-input:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+
+      .welcome-button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .welcome-button:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+      }
+
+      .welcome-button:active {
+        transform: translateY(0);
+      }
+
+      .welcome-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 768px) {
+        .welcome-container {
+          padding: 1.5rem;
+          width: 90%;
+        }
+
+        .welcome-container h1 {
+          font-size: 1.5rem;
+        }
+
+        .welcome-container p {
+          font-size: 1rem;
+        }
+      }
     </style>
 </head>
 <body>
-    <header>
-        Uncle E. 
-        <small>Powered by ValueFirst</small>
-    </header>
-    <div id="speakToggleWrapper">
-        <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
+    <!-- Welcome Overlay -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-container">
+        <h1>👋 Welcome to Uncle E!</h1>
+        <p>I'm your friendly Nigerian AI tutor, ready to help you learn anything!</p>
+        <input type="text" 
+               class="welcome-input" 
+               id="welcomeInput" 
+               placeholder="Hi! What's your name, grade, and what would you like to learn?"
+               autocomplete="off">
+        <button class="welcome-button" id="welcomeButton">Let's Begin!</button>
+      </div>
     </div>
 
-    <main id="wrapper">
-        <aside id="leftSidebar">
-            <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
-            <div id="knowledgeContent" style="overflow:auto">
-                <div id="aboutMrE">
-                    <p><strong>I am Uncle E.</strong></p>
-                    <p>
-                        Your friendly AI tutor! 🌟<br>
-                        I'll help you learn step by step.<br>
-                        Feel free to ask questions and relax!
-                    </p>
-                    <p><strong>Great!</strong></p>
-                </div>
-                <div id="treeContents" style="margin-top:.8rem"></div>
-                <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
-                <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
-            </div>
-        </aside>
+    <!-- Main Interface -->
+    <div id="mainInterface">
+      <header>
+          Uncle E. 
+          <small>Powered by ValueFirst</small>
+      </header>
+      
+      <div id="speakToggleWrapper">
+          <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
+      </div>
 
-        <div id="chatBoxWrapper">
-            <div id="chat"></div>
-        </div>
+      <main id="wrapper">
+          <aside id="leftSidebar">
+              <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
+              <div id="knowledgeContent" style="overflow:auto">
+                  <div id="aboutMrE">
+                      <p><strong>I am Uncle E.</strong></p>
+                      <p>
+                          Your friendly AI tutor! 🌟<br>
+                          I'll help you learn step by step.<br>
+                          Feel free to ask questions and relax!
+                      </p>
+                      <p><strong>Great!</strong></p>
+                  </div>
+                  <div id="treeContents" style="margin-top:.8rem"></div>
+                  <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
+                  <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
+              </div>
+          </aside>
 
-        <aside id="visuals">
-            <h3>🔍 Topic visuals</h3>
-            <div id="visualsContent"></div>
-        </aside>
-    </main>
+          <div id="chatBoxWrapper">
+              <div id="chat"></div>
+          </div>
 
-    <form id="chat-form">
-        <textarea id="messageInput" placeholder="Type your message…" required></textarea>
-        <div id="controls">
-            <div class="top-buttons">
-                <button type="submit">Send</button>
-                <button type="button" id="micButton">🎤</button>
-            </div>
-            <button type="button" class="clear-button" id="clearButton">🗑️ Clear</button>
-        </div>
-    </form>
+          <aside id="visuals">
+              <h3>🔍 Topic visuals</h3>
+              <div id="visualsContent"></div>
+          </aside>
+      </main>
+
+      <form id="chat-form">
+          <textarea id="messageInput" placeholder="Type your message…" required></textarea>
+          <div id="controls">
+              <div class="top-buttons">
+                  <button type="submit">Send</button>
+                  <button type="button" id="micButton">🎤</button>
+              </div>
+              <button type="button" class="clear-button" id="clearButton">🗑️ Clear</button>
+          </div>
+      </form>
+    </div>
 
     <script>
       /* ---------- DOM ---------- */
@@ -588,39 +724,67 @@
         updateProgress(0, 0);
       }
 
-      /* ---------- INITIALIZATION ---------- */
-      function initializeApp() {
-        const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
-        
-        // Clear any stale state
-        if (document.getElementById('chat').children.length === 0) {
-          localStorage.removeItem('treeState');
-          resetState();
-          
-          // Always show welcome for empty chat
-          addMsg(welcomeMessage, 'assistant');
-          history.push({ role: 'assistant', content: welcomeMessage });
-        } else {
-          // Try to restore existing session
-          try {
-            restoreTreeState();
-          } catch (e) {
-            console.error('Failed to restore state:', e);
-            localStorage.removeItem('treeState');
-            document.getElementById('chat').innerHTML = '';
-            addMsg(welcomeMessage, 'assistant');
-            history = [{ role: 'assistant', content: welcomeMessage }];
-            resetState();
-          }
+      /* ---------- WELCOME OVERLAY ---------- */
+      const overlay = document.getElementById('welcomeOverlay');
+      const mainInterface = document.getElementById('mainInterface');
+      const container = overlay.querySelector('.welcome-container');
+      const welcomeInput = document.getElementById('welcomeInput');
+      const welcomeButton = document.getElementById('welcomeButton');
+
+      function showWelcomeOverlay() {
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        setTimeout(() => {
+          container.classList.add('welcome-visible');
+          welcomeInput.focus();
+        }, 100);
+      }
+
+      function hideWelcomeOverlay() {
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(30px)';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 500);
+      }
+
+      function handleWelcomeSubmit() {
+        const message = welcomeInput.value.trim();
+        if (message) {
+          hideWelcomeOverlay();
+          setTimeout(() => {
+            send(message);
+          }, 800);
         }
       }
 
-      // Initialize the app
-      window.addEventListener('load', () => {
-        initializeApp();
-        // Remove speak toggle from DOM
-        document.getElementById('speakToggleWrapper')?.remove();
+      welcomeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleWelcomeSubmit();
+        }
       });
+
+      welcomeButton.addEventListener('click', handleWelcomeSubmit);
+
+      /* ---------- INITIALIZATION ---------- */
+      function initializeApp() {
+        const hasExistingSession = localStorage.getItem('treeState');
+        
+        if (hasExistingSession) {
+          overlay.style.display = 'none';
+          restoreTreeState();
+        } else {
+          showWelcomeOverlay();
+        }
+        
+        // Remove speak toggle
+        document.getElementById('speakToggleWrapper')?.remove();
+      }
+
+      // Initialize the app
+      window.addEventListener('load', initializeApp);
 
       async function send(msg) {
         try {
