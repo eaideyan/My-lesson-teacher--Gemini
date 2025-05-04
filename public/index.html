@@ -443,12 +443,13 @@
         return err;
       }
 
+      /* ---------- PROGRESS TRACKING ---------- */
       function updateProgress(done = 0, total = 0) {
         const filled = '🟢'.repeat(done);
         const empty = '⚪'.repeat(Math.max(total - done, 0));
         
         const pv = document.getElementById('progressVisual');
-        const percentage = Math.round((done / total) * 100) || 0;
+        const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
         
         pv.innerHTML = `
           <div style="margin-bottom:5px">🧠 Progress: ${percentage}%</div>
@@ -458,11 +459,14 @@
         pv.classList.add('pulse');
         
         const feedback = document.getElementById('progressFeedback');
-        feedback.innerHTML = done === total 
-          ? "🎉 Congratulations! Topic mastered!" 
-          : done > 0 
-            ? `Keep going! Next concept: ${done+1}/${total}` 
-            : "Let's begin your learning journey!";
+        if (total === 0) {
+          feedback.innerHTML = "Let's begin your learning journey!";
+        } else if (done === total) {
+          feedback.innerHTML = "🎉 Congratulations! Topic mastered!";
+          confetti();
+        } else {
+          feedback.innerHTML = `Keep going! Next concept: ${done+1}/${total}`;
+        }
         
         saveTreeState();
         setTimeout(() => pv.classList.remove('pulse'), 300);
@@ -683,7 +687,7 @@
       // Then restore any saved state
       restoreTreeState();
 
-      /* Remove the speak toggle from DOM */
+      // Remove speak toggle from DOM
       document.getElementById('speakToggleWrapper')?.remove();
     </script>
 </body>
