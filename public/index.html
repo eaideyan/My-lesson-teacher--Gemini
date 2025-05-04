@@ -383,6 +383,9 @@
       let thinking = null;
       let totalNodes = 0;
       let currentTopic = '';
+      let currentNode = 0;
+      let consecutiveCorrect = 0;
+      let questionCount = 0;
 
       /* ---------- HELPERS ---------- */
       function addMsg(text, role) {
@@ -443,33 +446,16 @@
         return err;
       }
 
-      /* ---------- TREE MARKING ---------- */
-      function markNode(index) {
-        const items = document.querySelectorAll('#treeContents li');
-        if (items[index]) {
-          items[index].innerHTML = items[index].innerHTML.replace(/^[✅🌱]\s*/, '✅ ');
-          
-          // Count completed nodes and update progress
-          const completed = document.querySelectorAll('#treeContents li').length;
-          const marked = document.querySelectorAll('#treeContents li:contains("✅")').length;
-          updateProgress(marked, completed);
-          
-          saveTreeState();
-        }
-      }
-
       /* ---------- PROGRESS TRACKING ---------- */
       function updateProgress(done = 0, total = 0) {
         const filled = '🟢'.repeat(done);
-        const empty = '⚪'.repeat(Math.max(total - done, 0));
+        const empty = '⬜'.repeat(Math.max(total - done, 0));
         
         const pv = document.getElementById('progressVisual');
         const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
         
         pv.innerHTML = `
-          <div style="margin-bottom:5px">🧠 Progress: ${percentage}%</div>
-          <div>${filled}${empty}</div>
-          <div style="margin-top:5px">${done}/${total} concepts mastered</div>
+          <div style="margin-bottom:5px">🧠 Progress: ${filled}${empty} (${done}/${total} mastered!)</div>
         `;
         
         const feedback = document.getElementById('progressFeedback');
@@ -483,15 +469,62 @@
         }
       }
 
-      // Add jQuery-like contains selector
-      document.querySelectorAll = function(selector) {
-        if (selector.includes(':contains')) {
-          const plainSelector = selector.split(':contains')[0];
-          const searchText = selector.match(/:contains\("([^"]+)"\)/)[1];
-          const elements = document.querySelectorAll(plainSelector);
-          return Array.from(elements).filter(el => el.textContent.includes(searchText));
+      /* ---------- NODE MASTERY ---------- */
+      function checkAnswer(isCorrect) {
+        if (isCorrect) {
+          consecutiveCorrect++;
+          questionCount++;
+          
+          if (consecutiveCorrect === 3) {
+            // Node is mastered after 3 consecutive correct answers
+            markNode(currentNode);
+            consecutiveCorrect = 0;
+            questionCount = 0;
+            currentNode++;
+            return true; // Node completed
+          }
+        } else {
+          // Reset consecutive correct count on wrong answer
+          consecutiveCorrect = 0;
+          questionCount = 0;
         }
-        return document.querySelectorAll(selector);
+        return false; // Node not completed yet
+      }
+
+      /* ---------- TREE MARKING ---------- */
+      function markNode(index) {
+        const items = document.querySelectorAll('#treeContents li');
+        if (items[index]) {
+          // Replace either 🌱 or 🔁 with ✅
+          items[index].innerHTML = items[index].innerHTML.replace(/[🌱🔁]\s*/, '✅ ');
+          
+          // Count completed nodes and update progress
+          const completed = items.length;
+          const marked = document.querySelectorAll('#treeContents li').length;
+          updateProgress(marked, completed);
+          
+          saveTreeState();
+        }
+      }
+
+      /* ---------- KNOWLEDGE TREE CREATION ---------- */
+      function createKnowledgeTree(topic, subject, grade, nodes) {
+        const treeHeader = document.getElementById('knowledgeHeader');
+        const treeContent = document.getElementById('treeContents');
+        
+        treeHeader.style.display = 'block';
+        treeHeader.textContent = `Knowledge Tree for ${topic} (${subject}, Primary ${grade}):`;
+        
+        const nodesList = nodes.map((node, i) => 
+          `<li>${i === 0 ? '🌱' : '🔁'} ${node}</li>`
+        ).join('');
+        
+        treeContent.innerHTML = `<ol style="padding-left:1rem">${nodesList}</ol>`;
+        document.getElementById('aboutMrE').style.display = 'none';
+        
+        totalNodes = nodes.length;
+        updateProgress(0, totalNodes);
+        saveTreeState();
       }
 
       /* ---------- STATE PERSISTENCE ---------- */
@@ -500,17 +533,18 @@
           const treeHTML = document.getElementById('treeContents').innerHTML;
           const progress = {
             done: (treeHTML.match(/✅/g) || []).length,
-            total: totalNodes
+            total: totalNodes,
+            currentNode,
+            consecutiveCorrect,
+            questionCount
           };
           
-          if (treeHTML.length < 50000) {
-            localStorage.setItem('treeState', JSON.stringify({
-              treeHTML,
-              progress,
-              history,
-              timestamp: Date.now()
-            }));
-          }
+          localStorage.setItem('treeState', JSON.stringify({
+            treeHTML,
+            progress,
+            history,
+            timestamp: Date.now()
+          }));
         } catch (e) {
           console.error('Failed to save state:', e);
         }
@@ -525,6 +559,9 @@
             document.getElementById('aboutMrE').style.display = 'none';
             
             totalNodes = saved.progress.total || 0;
+            currentNode = saved.progress.currentNode || 0;
+            consecutiveCorrect = saved.progress.consecutiveCorrect || 0;
+            questionCount = saved.progress.questionCount || 0;
             updateProgress(saved.progress.done || 0, totalNodes);
             
             if (saved.history && Array.isArray(saved.history)) {
@@ -534,11 +571,21 @@
           }
         } catch (e) {
           console.error('Failed to restore state:', e);
-          // If restoration fails, ensure clean state
           localStorage.removeItem('treeState');
-          history = [];
-          updateProgress(0, 0);
+          resetState();
         }
+      }
+
+      function resetState() {
+        history = [];
+        student = '';
+        thinking = null;
+        totalNodes = 0;
+        currentTopic = '';
+        currentNode = 0;
+        consecutiveCorrect = 0;
+        questionCount = 0;
+        updateProgress(0, 0);
       }
 
       /* ---------- INITIALIZATION ---------- */
@@ -548,33 +595,22 @@
         // Clear any stale state
         if (document.getElementById('chat').children.length === 0) {
           localStorage.removeItem('treeState');
-          history = [];
-          student = '';
-          thinking = null;
-          totalNodes = 0;
-          currentTopic = '';
+          resetState();
           
           // Always show welcome for empty chat
           addMsg(welcomeMessage, 'assistant');
           history.push({ role: 'assistant', content: welcomeMessage });
-          updateProgress(0, 0);
-          
-          // Reset knowledge tree to initial state
-          document.getElementById('knowledgeHeader').style.display = 'none';
-          document.getElementById('aboutMrE').style.display = 'block';
-          document.getElementById('treeContents').innerHTML = '';
         } else {
           // Try to restore existing session
           try {
             restoreTreeState();
           } catch (e) {
             console.error('Failed to restore state:', e);
-            // If restoration fails, reset to new session
             localStorage.removeItem('treeState');
             document.getElementById('chat').innerHTML = '';
             addMsg(welcomeMessage, 'assistant');
             history = [{ role: 'assistant', content: welcomeMessage }];
-            updateProgress(0, 0);
+            resetState();
           }
         }
       }
@@ -738,6 +774,9 @@
         thinking = null;
         totalNodes = 0;
         currentTopic = '';
+        consecutiveCorrect = 0;
+        questionCount = 0;
+        currentNode = 0;
         updateProgress();
         saveTreeState();
       });
