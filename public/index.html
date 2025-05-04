@@ -49,7 +49,7 @@
         position: fixed; 
         top: 0; left: 0; right: 0; 
         z-index: 10;
-        padding: 0.4rem;
+        padding: 0.35rem;
         background: var(--primary);
         color: var(--surface);
         text-align: center;
@@ -74,8 +74,9 @@
         gap: 0.5rem;
         max-width: var(--content-max-width); 
         width: 100%; 
-        margin: 2.75rem auto 0;
+        margin: 2.5rem auto 0;
         padding: 0 var(--wrapper-padding);
+        min-height: calc(100vh - 7rem);
       }
 
       /* ---------- SIDEBARS ---------- */
@@ -100,6 +101,20 @@
       }
 
       /* ---------- KNOWLEDGE TREE ---------- */
+      #leftSidebar {
+        width: 220px;
+      }
+
+      #aboutMrE {
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
       #knowledgeContent {
         background: white;
         border-radius: var(--radius);
@@ -122,7 +137,7 @@
       }
 
       #treeContents ol {
-        list-style: none;
+        list-style-position: inside;
         padding: 0;
         margin: 0;
         display: flex;
@@ -135,9 +150,6 @@
         border: none;
         font-size: 0.9rem;
         line-height: 1.4;
-        display: flex;
-        align-items: flex-start;
-        gap: 0.5rem;
       }
 
       #progressSection {
@@ -149,9 +161,6 @@
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
         line-height: 1.4;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
       }
 
       .progress-icons {
@@ -276,13 +285,11 @@
         width: calc(100% - 2 * var(--wrapper-padding));
         margin: 0 auto;
         background: var(--surface);
-        border-top: 2px solid var(--border);
+        border-top: 1px solid var(--border);
         padding: 0.5rem;
         display: flex;
         gap: 0.5rem;
         align-items: center;
-        border-top-left-radius: var(--radius-lg);
-        border-top-right-radius: var(--radius-lg);
       }
 
       textarea {
@@ -303,63 +310,35 @@
         border-color: var(--primary);
       }
 
-      button {
-        background: var(--primary);
-        color: var(--surface);
-        border: none;
-        border-radius: var(--radius);
-        padding: 0.5rem 1rem;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: transform 0.2s ease;
+      #controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
       }
 
-      button:hover {
-        transform: translateY(-1px);
+      .top-buttons {
+        display: flex;
+        gap: 0.25rem;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius);
+        font-size: 0.95rem;
       }
 
       .clear-button {
-        background: var(--accent);
-        padding: 0.4rem 0.75rem;
+        width: 100%;
+        background: #ff6b6b;
+        padding: 0.4rem;
         font-size: 0.85rem;
       }
 
       /* ---------- MOBILE ---------- */
       @media (max-width: 768px) {
-        :root {
-          --wrapper-padding: 0.5rem;
-        }
-
-        #leftSidebar,
-        #visuals {
-          display: none;
-        }
-
         main#wrapper {
-          padding: 0 var(--wrapper-padding);
-          margin-top: 2.5rem;
-        }
-
-        header {
-          padding: 0.35rem;
-        }
-
-        #chatBoxWrapper {
-          border-radius: var(--radius);
-          margin-bottom: 3.5rem;
-        }
-
-        form {
-          padding: 0.5rem;
-          border-radius: var(--radius);
-        }
-
-        textarea {
-          font-size: 16px;
-        }
-
-        .bubble {
-          border-radius: var(--radius);
+          margin-top: 2.25rem;
+          min-height: calc(100vh - 6.5rem);
         }
       }
 
@@ -571,24 +550,6 @@
         }
       }
 
-      /* ---------- KNOWLEDGE TREE CREATION ---------- */
-      function createKnowledgeTree(topic, subject, grade, nodes) {
-        const treeHeader = document.getElementById('knowledgeHeader');
-        const treeContent = document.getElementById('treeContents');
-        
-        treeHeader.innerHTML = `📘 Knowledge Tree`;
-        
-        const nodesList = nodes.map((node, i) => 
-          `<li>🌱 ${node}</li>`
-        ).join('');
-        
-        treeContent.innerHTML = `<ol>${nodesList}</ol>`;
-        
-        totalNodes = nodes.length;
-        updateProgress(0, totalNodes);
-        saveTreeState();
-      }
-
       /* ---------- STATE PERSISTENCE ---------- */
       function saveTreeState() {
         try {
@@ -651,19 +612,19 @@
       }
 
       /* ---------- INITIALIZATION ---------- */
-      async function initializeApp() {
+      function initializeApp() {
         const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
         
-        // Clear any stale state
+        // Show initial greeting
+        document.getElementById('aboutMrE').style.display = 'block';
+        document.getElementById('knowledgeContent').style.display = 'none';
+        
         if (document.getElementById('chat').children.length === 0) {
           localStorage.removeItem('treeState');
           resetState();
-          
-          // Always show welcome for empty chat
           addMsg(welcomeMessage, 'assistant');
           history.push({ role: 'assistant', content: welcomeMessage });
         } else {
-          // Try to restore existing session
           try {
             restoreTreeState();
           } catch (e) {
@@ -771,8 +732,12 @@
         }
       });
 
-      // Initialize the app
-      window.addEventListener('load', initializeApp);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          form.dispatchEvent(new Event('submit'));
+        }
+      });
     </script>
 </body>
 </html> 
