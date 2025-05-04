@@ -653,6 +653,13 @@
 
       /* ---------- INITIALIZATION ---------- */
       restoreTreeState();
+
+      // Add welcome message
+      if (!history.length) {
+        const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
+        addMsg(welcomeMessage, 'assistant');
+        history.push({ role: 'assistant', content: welcomeMessage });
+      }
     </script>
 </body>
 </html> 
