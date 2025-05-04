@@ -664,14 +664,15 @@
       });
 
       /* ---------- INITIALIZATION ---------- */
-      restoreTreeState();
-
-      // Add welcome message
-      if (!history.length) {
-        const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
+      // Add welcome message first
+      const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
+      if (!localStorage.getItem('treeState') && !history.length) {
         addMsg(welcomeMessage, 'assistant');
         history.push({ role: 'assistant', content: welcomeMessage });
       }
+
+      // Then restore any saved state
+      restoreTreeState();
     </script>
 </body>
 </html> 
