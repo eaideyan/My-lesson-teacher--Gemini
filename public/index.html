@@ -318,18 +318,6 @@
         animation: floatUp 1.3s ease-out forwards;
       }
 
-      /* ---------- MAIN INTERFACE ---------- */
-      #mainInterface {
-        display: none; /* Hide initially */
-        opacity: 0;
-        transition: opacity 0.5s ease;
-      }
-
-      #mainInterface.visible {
-        display: block;
-        opacity: 1;
-      }
-
       /* ---------- WELCOME OVERLAY STYLES ---------- */
       .welcome-overlay {
         position: fixed;
@@ -337,21 +325,20 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(37, 99, 235, 0.95); /* Semi-transparent blue */
-        backdrop-filter: blur(8px); /* Subtle blur effect */
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 2000;
         opacity: 0;
-        transition: all 0.5s ease;
+        transition: opacity 0.5s ease;
       }
 
       .welcome-container {
         background: white;
         padding: 2rem;
         border-radius: 24px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         max-width: 90%;
         width: 500px;
         text-align: center;
@@ -452,57 +439,53 @@
       </div>
     </div>
 
-    <!-- Main Interface -->
-    <div id="mainInterface">
-      <header>
-          Uncle E. 
-          <small>Powered by ValueFirst</small>
-      </header>
-      
-      <div id="speakToggleWrapper">
-          <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
-      </div>
-
-      <main id="wrapper">
-          <aside id="leftSidebar">
-              <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
-              <div id="knowledgeContent" style="overflow:auto">
-                  <div id="aboutMrE">
-                      <p><strong>I am Uncle E.</strong></p>
-                      <p>
-                          Your friendly AI tutor! 🌟<br>
-                          I'll help you learn step by step.<br>
-                          Feel free to ask questions and relax!
-                      </p>
-                      <p><strong>Great!</strong></p>
-                  </div>
-                  <div id="treeContents" style="margin-top:.8rem"></div>
-                  <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
-                  <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
-              </div>
-          </aside>
-
-          <div id="chatBoxWrapper">
-              <div id="chat"></div>
-          </div>
-
-          <aside id="visuals">
-              <h3>🔍 Topic visuals</h3>
-              <div id="visualsContent"></div>
-          </aside>
-      </main>
-
-      <form id="chat-form">
-          <textarea id="messageInput" placeholder="Type your message…" required></textarea>
-          <div id="controls">
-              <div class="top-buttons">
-                  <button type="submit">Send</button>
-                  <button type="button" id="micButton">🎤</button>
-              </div>
-              <button type="button" class="clear-button" id="clearButton">🗑️ Clear</button>
-          </div>
-      </form>
+    <header>
+        Uncle E. 
+        <small>Powered by ValueFirst</small>
+    </header>
+    <div id="speakToggleWrapper">
+        <label><input type="checkbox" id="speakToggle"> 🔊 Uncle E. Speaks</label>
     </div>
+
+    <main id="wrapper">
+        <aside id="leftSidebar">
+            <h3 id="knowledgeHeader" style="display:none">📘 Knowledge Tree</h3>
+            <div id="knowledgeContent" style="overflow:auto">
+                <div id="aboutMrE">
+                    <p><strong>I am Uncle E.</strong></p>
+                    <p>
+                        Your friendly AI tutor! 🌟<br>
+                        I'll help you learn step by step.<br>
+                        Feel free to ask questions and relax!
+                    </p>
+                    <p><strong>Great!</strong></p>
+                </div>
+                <div id="treeContents" style="margin-top:.8rem"></div>
+                <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
+                <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
+            </div>
+        </aside>
+
+        <div id="chatBoxWrapper">
+            <div id="chat"></div>
+        </div>
+
+        <aside id="visuals">
+            <h3>🔍 Topic visuals</h3>
+            <div id="visualsContent"></div>
+        </aside>
+    </main>
+
+    <form id="chat-form">
+        <textarea id="messageInput" placeholder="Type your message…" required></textarea>
+        <div id="controls">
+            <div class="top-buttons">
+                <button type="submit">Send</button>
+                <button type="button" id="micButton">🎤</button>
+            </div>
+            <button type="button" class="clear-button" id="clearButton">🗑️ Clear</button>
+        </div>
+    </form>
 
     <script>
       /* ---------- DOM ---------- */
@@ -726,13 +709,11 @@
 
       /* ---------- WELCOME OVERLAY ---------- */
       const overlay = document.getElementById('welcomeOverlay');
-      const mainInterface = document.getElementById('mainInterface');
       const container = overlay.querySelector('.welcome-container');
       const welcomeInput = document.getElementById('welcomeInput');
       const welcomeButton = document.getElementById('welcomeButton');
 
       function showWelcomeOverlay() {
-        overlay.style.display = 'flex';
         overlay.style.opacity = '1';
         setTimeout(() => {
           container.classList.add('welcome-visible');
@@ -743,10 +724,12 @@
       function hideWelcomeOverlay() {
         container.style.opacity = '0';
         container.style.transform = 'translateY(30px)';
-        overlay.style.opacity = '0';
         setTimeout(() => {
-          overlay.style.display = 'none';
-        }, 500);
+          overlay.style.opacity = '0';
+          setTimeout(() => {
+            overlay.style.display = 'none';
+          }, 500);
+        }, 300);
       }
 
       function handleWelcomeSubmit() {
@@ -770,21 +753,18 @@
 
       /* ---------- INITIALIZATION ---------- */
       function initializeApp() {
-        const hasExistingSession = localStorage.getItem('treeState');
-        
-        if (hasExistingSession) {
-          overlay.style.display = 'none';
-          restoreTreeState();
-        } else {
+        // Only show welcome overlay for new sessions
+        if (!localStorage.getItem('treeState')) {
           showWelcomeOverlay();
         }
-        
-        // Remove speak toggle
-        document.getElementById('speakToggleWrapper')?.remove();
       }
 
       // Initialize the app
-      window.addEventListener('load', initializeApp);
+      window.addEventListener('load', () => {
+        initializeApp();
+        // Remove speak toggle from DOM
+        document.getElementById('speakToggleWrapper')?.remove();
+      });
 
       async function send(msg) {
         try {
