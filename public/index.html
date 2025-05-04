@@ -530,31 +530,46 @@
       function initializeApp() {
         const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
         
-        try {
-          const savedState = localStorage.getItem('treeState');
-          if (!savedState) {
-            // New session
-            addMsg(welcomeMessage, 'assistant');
-            history.push({ role: 'assistant', content: welcomeMessage });
-            updateProgress(0, 0);
-          } else {
-            // Restore existing session
-            restoreTreeState();
-          }
-        } catch (e) {
-          // Fallback to new session if anything fails
-          console.error('Failed to initialize:', e);
+        // Clear any stale state
+        if (document.getElementById('chat').children.length === 0) {
+          localStorage.removeItem('treeState');
+          history = [];
+          student = '';
+          thinking = null;
+          totalNodes = 0;
+          currentTopic = '';
+          
+          // Always show welcome for empty chat
           addMsg(welcomeMessage, 'assistant');
           history.push({ role: 'assistant', content: welcomeMessage });
           updateProgress(0, 0);
+          
+          // Reset knowledge tree to initial state
+          document.getElementById('knowledgeHeader').style.display = 'none';
+          document.getElementById('aboutMrE').style.display = 'block';
+          document.getElementById('treeContents').innerHTML = '';
+        } else {
+          // Try to restore existing session
+          try {
+            restoreTreeState();
+          } catch (e) {
+            console.error('Failed to restore state:', e);
+            // If restoration fails, reset to new session
+            localStorage.removeItem('treeState');
+            document.getElementById('chat').innerHTML = '';
+            addMsg(welcomeMessage, 'assistant');
+            history = [{ role: 'assistant', content: welcomeMessage }];
+            updateProgress(0, 0);
+          }
         }
       }
 
       // Initialize the app
-      initializeApp();
-
-      // Remove speak toggle from DOM
-      document.getElementById('speakToggleWrapper')?.remove();
+      window.addEventListener('load', () => {
+        initializeApp();
+        // Remove speak toggle from DOM
+        document.getElementById('speakToggleWrapper')?.remove();
+      });
 
       async function send(msg) {
         try {
