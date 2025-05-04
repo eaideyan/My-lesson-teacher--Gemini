@@ -24,17 +24,21 @@
       /* ---------- HEADER ---------- */
       header {
         position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-        padding: 1rem env(safe-area-inset-right) 1rem env(safe-area-inset-left);
+        padding: 0.7rem env(safe-area-inset-right) 0.7rem env(safe-area-inset-left);
         background: #2563eb; color: #fff; text-align: center; line-height: 1.2;
-        font-size: 1.4rem; font-weight: 700;
+        font-size: 1.2rem; font-weight: 700;
         box-shadow: 0 2px 5px rgba(0,0,0,.1);
       }
-      header small { display: block; font-size: .7rem; font-weight: 400 }
+      header small { 
+        display: block; 
+        font-size: .7rem; 
+        font-weight: 400;
+        margin-top: 0.1rem;
+      }
 
       /* ---------- VOICE TOGGLE ---------- */
       #speakToggleWrapper {
-        position: fixed; top: 1rem; right: 1rem; z-index: 1001;
-        font-size: .85rem; color: #fff;
+        display: none !important; /* Hide the speak toggle completely */
       }
 
       /* ---------- MAIN WRAPPER ---------- */
@@ -230,7 +234,7 @@
 
         main#wrapper {
           flex-direction: column;
-          padding: 4rem 0.5rem calc(4rem + env(safe-area-inset-bottom));
+          padding-top: 3.5rem; /* Reduce top padding to match smaller header */
           width: 100%;
         }
 
@@ -258,6 +262,15 @@
 
         .bubble {
           max-width: 85%;
+        }
+
+        header {
+          padding: 0.5rem;
+          font-size: 1.2rem;
+        }
+        header small {
+          font-size: 0.65rem;
+          margin-top: 0;
         }
       }
 
@@ -329,10 +342,6 @@
                     <p><strong>Great!</strong></p>
                 </div>
                 <div id="treeContents" style="margin-top:.8rem"></div>
-                <div class="progress-display" style="margin-top:1rem;color:#4b5563;font-size:0.9rem">
-                    Progress: 0%<br>
-                    0/0 concepts mastered
-                </div>
                 <div id="progressVisual" style="margin-top:1rem;font-weight:bold"></div>
                 <div id="progressFeedback" style="font-size:.85rem;color:#4b5563;margin-top:.3rem"></div>
             </div>
@@ -673,6 +682,9 @@
 
       // Then restore any saved state
       restoreTreeState();
+
+      /* Remove the speak toggle from DOM */
+      document.getElementById('speakToggleWrapper')?.remove();
     </script>
 </body>
 </html> 
