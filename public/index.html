@@ -49,12 +49,12 @@
         position: fixed; 
         top: 0; left: 0; right: 0; 
         z-index: 10;
-        padding: 0.35rem;
+        padding: 0.5rem;
         background: var(--primary);
         color: var(--surface);
         text-align: center;
         line-height: 1.2;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: 700;
         border-bottom-left-radius: var(--radius);
         border-bottom-right-radius: var(--radius);
@@ -62,7 +62,7 @@
 
       header small { 
         display: block; 
-        font-size: 0.65rem;
+        font-size: 0.7rem;
         opacity: 0.9;
         margin-top: 0.1rem;
       }
@@ -74,9 +74,8 @@
         gap: 0.5rem;
         max-width: var(--content-max-width); 
         width: 100%; 
-        margin: 2.5rem auto 0;
+        margin: 3.5rem auto 0;
         padding: 0 var(--wrapper-padding);
-        min-height: calc(100vh - 7rem);
       }
 
       /* ---------- SIDEBARS ---------- */
@@ -100,80 +99,71 @@
         background: var(--surface);
       }
 
-      /* ---------- KNOWLEDGE TREE ---------- */
-      #leftSidebar {
-        width: 220px;
-      }
-
-      #aboutMrE {
-        background: white;
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        padding: 0.75rem;
-        margin-bottom: 0.75rem;
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
+      /* Update Knowledge Tree styles */
       #knowledgeContent {
-        display: none;
-        background: white;
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        overflow: hidden;
-      }
-
-      #knowledgeHeader {
-        font-size: 1rem;
-        padding: 0.75rem;
-        border-bottom: 1px solid var(--border);
-        margin: 0;
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        flex-direction: column;
+        gap: 0.75rem;
       }
 
       #treeContents {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
         padding: 0.75rem;
       }
 
       #treeContents ol {
-        list-style-position: inside;
+        list-style: none;
         padding: 0;
         margin: 0;
+      }
+
+      #treeContents li {
+        padding: 0.5rem;
+        color: var(--text);
+        border-bottom: 1px solid var(--border);
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+      }
+
+      #treeContents li:last-child {
+        border-bottom: none;
+      }
+
+      #treeContents li:hover {
+        background: var(--background);
+      }
+
+      #knowledgeHeader {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+
+      /* Progress section styles */
+      #progressSection {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
       }
 
-      #treeContents li {
-        padding: 0;
-        border: none;
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
-      #progressSection {
-        padding: 0.75rem;
-        border-top: 1px solid var(--border);
-      }
-
       #progressVisual {
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
-      .progress-icons {
-        display: flex;
-        gap: 0.25rem;
-        margin: 0.25rem 0;
+        background: var(--background);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.75rem;
       }
 
       #progressFeedback {
-        color: var(--text);
-        font-size: 0.9rem;
+        color: var(--text-light);
+        font-size: 0.85rem;
         text-align: center;
+        padding: 0.5rem;
+        background: var(--background);
+        border-radius: var(--radius);
+        border: 2px solid var(--border);
       }
 
       /* Visual Aid Box */
@@ -203,9 +193,9 @@
         flex: 1;
         background: var(--surface);
         border-radius: var(--radius-lg);
-        border: 1px solid var(--border);
-        padding: 0.75rem;
-        display: flex;
+        border: 2px solid var(--border);
+        padding: 0.5rem;
+        display: flex; 
         flex-direction: column;
         overflow: hidden;
         margin-bottom: 4rem;
@@ -214,20 +204,20 @@
       #chat {
         flex: 1;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+        display: flex; 
+        flex-direction: column; 
+        gap: 0.5rem;
         padding-right: 0.25rem;
       }
 
       /* ---------- MESSAGES ---------- */
-      .message-row {
-        display: flex;
+      .message-row { 
+        display: flex; 
         align-items: flex-start;
         gap: 0.5rem;
       }
       
-      .message-row.user {
+      .message-row.user { 
         justify-content: flex-end;
       }
 
@@ -241,10 +231,10 @@
         justify-content: center;
         font-size: 1rem;
         background: var(--background);
-        border: 1px solid var(--border);
+        border: 2px solid var(--border);
       }
 
-      .user .avatar {
+      .user .avatar { 
         background: var(--primary);
         color: var(--surface);
       }
@@ -255,7 +245,7 @@
       }
 
       .bubble {
-        max-width: 85%;
+        max-width: 90%;
         padding: 0.75rem;
         border-radius: var(--radius-lg);
         font-size: 0.95rem;
@@ -272,7 +262,7 @@
 
       .bubble.assistant {
         background: var(--background);
-        border: 1px solid var(--border);
+        border: 2px solid var(--border);
         border-bottom-left-radius: 0;
       }
 
@@ -286,23 +276,26 @@
         width: calc(100% - 2 * var(--wrapper-padding));
         margin: 0 auto;
         background: var(--surface);
-        border-top: 1px solid var(--border);
+        border-top: 2px solid var(--border);
         padding: 0.5rem;
         display: flex;
         gap: 0.5rem;
-        align-items: flex-start;
+        align-items: center;
+        border-top-left-radius: var(--radius-lg);
+        border-top-right-radius: var(--radius-lg);
       }
 
       textarea {
         flex: 1;
-        border: 1px solid var(--border);
+        border: 2px solid var(--border);
         border-radius: var(--radius-lg);
-        padding: 0.75rem;
+        padding: 0.5rem 0.75rem;
         font-size: 0.95rem;
-        min-height: 2.5rem;
+        min-height: 2.25rem;
         max-height: 8rem;
         resize: none;
         background: var(--background);
+        transition: border-color 0.2s ease;
       }
 
       textarea:focus {
@@ -310,18 +303,9 @@
         border-color: var(--primary);
       }
 
-      #controls {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-
-      .top-buttons {
-        display: flex;
-        gap: 0.25rem;
-      }
-
       button {
+        background: var(--primary);
+        color: var(--surface);
         border: none;
         border-radius: var(--radius);
         padding: 0.5rem 1rem;
@@ -330,47 +314,47 @@
         transition: transform 0.2s ease;
       }
 
-      button[type="submit"], #micButton {
-        background: var(--primary);
-        color: var(--surface);
-      }
-
       button:hover {
         transform: translateY(-1px);
       }
 
       .clear-button {
-        width: 100%;
         background: var(--accent);
-        color: var(--surface);
-        padding: 0.4rem;
+        padding: 0.4rem 0.75rem;
         font-size: 0.85rem;
       }
 
       /* ---------- MOBILE ---------- */
       @media (max-width: 768px) {
-        main#wrapper {
-          margin-top: 2.25rem;
-          min-height: calc(100vh - 6.5rem);
+        :root {
+          --wrapper-padding: 0.5rem;
         }
 
-        #leftSidebar, #visuals {
+        #leftSidebar,
+        #visuals {
           display: none;
         }
 
+        main#wrapper {
+          padding: 0 var(--wrapper-padding);
+        }
+
         #chatBoxWrapper {
-          margin: 0 -0.5rem 3.5rem;
-          border-radius: 0;
-          border-left: 0;
-          border-right: 0;
+          border-radius: var(--radius);
+          margin-bottom: 3.5rem;
         }
 
         form {
           padding: 0.5rem;
+          border-radius: var(--radius);
         }
 
         textarea {
           font-size: 16px;
+        }
+
+        .bubble {
+          border-radius: var(--radius);
         }
       }
 
@@ -522,15 +506,15 @@
 
       /* ---------- PROGRESS TRACKING ---------- */
       function updateProgress(done = 0, total = 0) {
+        const filled = '🟢'.repeat(done);
+        const empty = '⬜'.repeat(Math.max(total - done, 0));
+        
         const pv = document.getElementById('progressVisual');
         const percentage = total > 0 ? Math.round((done / total) * 100) : 0;
         
         pv.innerHTML = `
-          <div>🧠 Progress: ${percentage}%</div>
-          <div class="progress-icons">
-            ${'🟢'.repeat(done)}
-          </div>
-          <div>${done}/${total} concepts mastered</div>
+          <div>🧠 Progress: ${filled}${empty}</div>
+          <div style="margin-top:5px">${done}/${total} mastered!</div>
         `;
         
         const feedback = document.getElementById('progressFeedback');
@@ -580,6 +564,24 @@
           
           saveTreeState();
         }
+      }
+
+      /* ---------- KNOWLEDGE TREE CREATION ---------- */
+      function createKnowledgeTree(topic, subject, grade, nodes) {
+        const treeHeader = document.getElementById('knowledgeHeader');
+        const treeContent = document.getElementById('treeContents');
+        
+        treeHeader.textContent = `📘 Knowledge Tree for ${topic}`;
+        
+        const nodesList = nodes.map((node, i) => 
+          `<li>${i === 0 ? '🌱' : '🔁'} ${node}</li>`
+        ).join('');
+        
+        treeContent.innerHTML = `<ol>${nodesList}</ol>`;
+        
+        totalNodes = nodes.length;
+        updateProgress(0, totalNodes);
+        saveTreeState();
       }
 
       /* ---------- STATE PERSISTENCE ---------- */
@@ -644,19 +646,19 @@
       }
 
       /* ---------- INITIALIZATION ---------- */
-      function initializeApp() {
+      async function initializeApp() {
         const welcomeMessage = "Welcome 👋 What's your name, grade, and what topic would you like to learn today?";
         
-        // Show initial greeting, hide knowledge tree
-        document.getElementById('aboutMrE').style.display = 'block';
-        document.getElementById('knowledgeContent').style.display = 'none';
-        
+        // Clear any stale state
         if (document.getElementById('chat').children.length === 0) {
           localStorage.removeItem('treeState');
           resetState();
+          
+          // Always show welcome for empty chat
           addMsg(welcomeMessage, 'assistant');
           history.push({ role: 'assistant', content: welcomeMessage });
         } else {
+          // Try to restore existing session
           try {
             restoreTreeState();
           } catch (e) {
@@ -668,28 +670,6 @@
             resetState();
           }
         }
-      }
-
-      /* ---------- KNOWLEDGE TREE CREATION ---------- */
-      function createKnowledgeTree(topic, subject, grade, nodes) {
-        // Hide greeting, show knowledge tree
-        document.getElementById('aboutMrE').style.display = 'none';
-        document.getElementById('knowledgeContent').style.display = 'block';
-        
-        const treeHeader = document.getElementById('knowledgeHeader');
-        const treeContent = document.getElementById('treeContents');
-        
-        treeHeader.innerHTML = `📘 Knowledge Tree`;
-        
-        const nodesList = nodes.map((node, i) => 
-          `<li>${i + 1}. 🌱 ${node}</li>`
-        ).join('');
-        
-        treeContent.innerHTML = `<ol>${nodesList}</ol>`;
-        
-        totalNodes = nodes.length;
-        updateProgress(0, totalNodes);
-        saveTreeState();
       }
 
       // Initialize the app
@@ -786,12 +766,8 @@
         }
       });
 
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          form.dispatchEvent(new Event('submit'));
-        }
-      });
+      // Initialize the app
+      window.addEventListener('load', initializeApp);
     </script>
 </body>
 </html> 
